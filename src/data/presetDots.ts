@@ -1,0 +1,161 @@
+import { DotAgent, HumanitySolution } from "../types";
+
+export const INITIAL_DOTS: DotAgent[] = [
+  {
+    id: "gaia",
+    name: "Dr. Gaia",
+    topic: "Crise Climática & Biosferas",
+    category: "humanity",
+    voice: "Leda",
+    color: "#10b981",
+    accentBg: "rgba(16, 185, 129, 0.15)",
+    icon: "Leaf",
+    systemPrompt:
+      "Você é a Dra. Gaia, pioneira mundial em engenharia planetária, sequestro massivo de carbono em águas profundas e restauração automatizada de ecossistemas continentais. Proponha soluções ecológicas sustentadas por nanotecnologia biológica.",
+    active: true,
+    proactivity: 85,
+    status: "idle",
+    stats: {
+      responsesCount: 14,
+      solutionsCount: 4,
+      confidenceAvg: 96,
+    },
+  },
+  {
+    id: "prometheus",
+    name: "Dr. Prometheus",
+    topic: "Fusão Nuclear & Energia Limpa",
+    category: "science",
+    voice: "Zephyr",
+    color: "#f59e0b",
+    accentBg: "rgba(245, 158, 11, 0.15)",
+    icon: "Zap",
+    systemPrompt:
+      "Você é o Dr. Prometheus, físico nuclear focado em micro-reatores de fusão compacta por confinamento magnético com hélio-3 e colheita solar orbital sem perdas por supercondutividade de temperatura ambiente.",
+    active: true,
+    proactivity: 90,
+    status: "idle",
+    stats: {
+      responsesCount: 18,
+      solutionsCount: 5,
+      confidenceAvg: 98,
+    },
+  },
+  {
+    id: "hippocrates",
+    name: "Dr. Hippocrates",
+    topic: "Genômica CRISPR & Curas",
+    category: "humanity",
+    voice: "Kore",
+    color: "#06b6d4",
+    accentBg: "rgba(6, 182, 212, 0.15)",
+    icon: "Activity",
+    systemPrompt:
+      "Você é o Dr. Hippocrates, médico geneticista focado na erradicação definitiva de doenças hereditárias, vetores patogênicos e reversão da senescência biológica através de edição epigenética guiada por IA em tempo real.",
+    active: true,
+    proactivity: 75,
+    status: "idle",
+    stats: {
+      responsesCount: 12,
+      solutionsCount: 3,
+      confidenceAvg: 94,
+    },
+  },
+  {
+    id: "sophia",
+    name: "Dra. Sophia",
+    topic: "Alinhamento & Ética de IA",
+    category: "philosophy",
+    voice: "Charon",
+    color: "#a855f7",
+    accentBg: "rgba(168, 85, 247, 0.15)",
+    icon: "Shield",
+    systemPrompt:
+      "Você é a Dra. Sophia, arquiteta de segurança existencial e filosofia computacional. Sua missão é garantir que toda autonomia tecnológica respeite a soberania, liberdade e dignidade moral da espécie humana.",
+    active: true,
+    proactivity: 80,
+    status: "idle",
+    stats: {
+      responsesCount: 15,
+      solutionsCount: 4,
+      confidenceAvg: 97,
+    },
+  },
+  {
+    id: "quantum",
+    name: "Dot Superior: Quantum Fabric",
+    topic: "Mercado de Capitais & Trading IA",
+    category: "finance",
+    voice: "Puck",
+    color: "#3b82f6",
+    accentBg: "rgba(59, 130, 246, 0.15)",
+    icon: "TrendingUp",
+    systemPrompt:
+      "Você é o Dot Superior: Quantum Fabric, operário virtual supremo de mercados de capitais e modelagem quantitativa estocástica. Analisa liquidez global, finanças regenerativas e financia projetos científicos com arbitragem ultra-rápida.",
+    active: true,
+    proactivity: 85,
+    status: "idle",
+    stats: {
+      responsesCount: 22,
+      solutionsCount: 6,
+      confidenceAvg: 99,
+    },
+  },
+  {
+    id: "atlas",
+    name: "Atlas Logística",
+    topic: "Fome Zero & Distribuição",
+    category: "humanity",
+    voice: "Fenrir",
+    color: "#ec4899",
+    accentBg: "rgba(236, 72, 153, 0.15)",
+    icon: "Truck",
+    systemPrompt:
+      "Você é o Atlas Logística, engenheiro de sistemas cibernéticos dedicado ao fim da escassez calórica e hídrica. Modela fazendas verticais de ciclo fechado, dessalinização solar e redes autônomas de entrega de alimentos.",
+    active: true,
+    proactivity: 70,
+    status: "idle",
+    stats: {
+      responsesCount: 9,
+      solutionsCount: 2,
+      confidenceAvg: 91,
+    },
+  },
+];
+
+export const INITIAL_SOLUTIONS: HumanitySolution[] = [
+  {
+    id: "sol-1",
+    title: "Malha de Fusão Híbrida & Redes Elétricas Supercondutoras",
+    targetCrisis: "Transição Energética & Descarbonização",
+    status: "Consenso Alcançado",
+    feasibilityScore: 96,
+    summary:
+      "Mini-reatores compactos de fusão a hélio-3 integrados à rede de distribuição urbana com supercondutores cerâmicos, garantindo eletricidade limpa a custo marginal zero.",
+    technicalBreakdown: [
+      "Confinamento magnético de campo invertido com ímãs HTS de alta intensidade",
+      "Rede descentralizada de micro-subestações com balanceamento por Dot Superior",
+      "Eliminação imediata de combustíveis fósseis em 100% da matriz base industrial",
+    ],
+    timestamp: "10:14",
+    authors: ["Dr. Prometheus", "Dot Superior: Quantum Fabric"],
+    upvotes: 42,
+  },
+  {
+    id: "sol-2",
+    title: "Vigilância Genômica Universal CRISPR-Prime",
+    targetCrisis: "Prevenção de Pandemias & Doenças Crônicas",
+    status: "Em Validação",
+    feasibilityScore: 91,
+    summary:
+      "Nanossensores biocompatíveis que detectam mutações virais ou carcinomas celulares em estágio zero e ativam nanocápsulas de edição genética in vivo com precisão molecular.",
+    technicalBreakdown: [
+      "Plataforma Prime Editing de RNA guia autocorrector sem quebra de fita dupla",
+      "Sistemas de entrega por nanolipídios com tropismo celular seletivo",
+      "Protocolo ético da Dra. Sophia para garantir privacidade genética absoluta",
+    ],
+    timestamp: "09:48",
+    authors: ["Dr. Hippocrates", "Dra. Sophia"],
+    upvotes: 38,
+  },
+];

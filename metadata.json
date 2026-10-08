@@ -1,0 +1,6 @@
+{
+  "name": "Dot-Nexus: Live AI Multiplexer & Autonomous Dots",
+  "description": "Playground com barra Gemini, agente multiplexador, síntese de voz TTS e dots autônomos proativos para solucionar problemas da humanidade e análise profunda.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
