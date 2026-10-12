@@ -1,10 +1,11 @@
 import React, { useRef, useEffect, useState } from "react";
 import { DotAgent } from "../types";
-import { Maximize2, RotateCcw, Activity } from "lucide-react";
+import { Activity, Cpu, Radio, Sparkles } from "lucide-react";
 
 interface MultiplexerTopologyCanvasProps {
   dots: DotAgent[];
   activeSpeakerDotId: string | null;
+  processingDotIds?: string[];
   onSelectDot: (dot: DotAgent) => void;
   isRouting: boolean;
   activeTopic?: string | null;
@@ -37,6 +38,7 @@ interface Particle {
 export const MultiplexerTopologyCanvas: React.FC<MultiplexerTopologyCanvasProps> = ({
   dots,
   activeSpeakerDotId,
+  processingDotIds = [],
   onSelectDot,
   isRouting,
   activeTopic,
@@ -46,11 +48,7 @@ export const MultiplexerTopologyCanvas: React.FC<MultiplexerTopologyCanvasProps>
   const particlesRef = useRef<Particle[]>([]);
   const animationFrameRef = useRef<number | null>(null);
   const [hoveredNode, setHoveredNode] = useState<CanvasNode | null>(null);
-
-  // Trigger routing particles
-  const triggerParticles = (fromId: string, toId: string, color: string, count: number = 6) => {
-    // Generated inside the render loop
-  };
+  const [renderedNodes, setRenderedNodes] = useState<CanvasNode[]>([]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -67,9 +65,15 @@ export const MultiplexerTopologyCanvas: React.FC<MultiplexerTopologyCanvasProps>
       if (!canvas || !container) return;
       width = canvas.width = container.clientWidth;
       height = canvas.height = container.clientHeight;
+      setRenderedNodes(getNodes());
     };
 
     window.addEventListener("resize", handleResize);
+
+    const resizeObserver = new ResizeObserver(() => {
+      handleResize();
+    });
+    resizeObserver.observe(container);
 
     // Compute nodes
     const getNodes = (): CanvasNode[] => {
@@ -124,6 +128,9 @@ export const MultiplexerTopologyCanvas: React.FC<MultiplexerTopologyCanvasProps>
       return nodes;
     };
 
+    const initialNodes = getNodes();
+    setRenderedNodes(initialNodes);
+
     let stepCounter = 0;
 
     const render = () => {
@@ -134,8 +141,8 @@ export const MultiplexerTopologyCanvas: React.FC<MultiplexerTopologyCanvasProps>
       const routerNode = nodes.find((n) => n.id === "router");
       const userNode = nodes.find((n) => n.id === "user");
 
-      // Spawn periodic signal particles if routing or speaking
-      if (stepCounter % 25 === 0 && routerNode && userNode) {
+      // Spawn periodic signal particles if routing
+      if (stepCounter % 20 === 0 && routerNode && userNode) {
         if (isRouting) {
           particlesRef.current.push({
             fromX: userNode.x,
@@ -143,31 +150,51 @@ export const MultiplexerTopologyCanvas: React.FC<MultiplexerTopologyCanvasProps>
             toX: routerNode.x,
             toY: routerNode.y,
             progress: 0,
-            speed: 0.03,
+            speed: 0.035,
             color: "#06b6d4",
             size: 3.5,
           });
         }
       }
 
-      if (activeSpeakerDotId && stepCounter % 15 === 0 && routerNode) {
-        const speakerNode = nodes.find((n) => n.id === activeSpeakerDotId);
-        if (speakerNode) {
-          particlesRef.current.push({
-            fromX: routerNode.x,
-            fromY: routerNode.y,
-            toX: speakerNode.x,
-            toY: speakerNode.y,
-            progress: 0,
-            speed: 0.035,
-            color: speakerNode.color,
-            size: 3.5,
+      // Spawn particles to speaker or processing dots
+      if (stepCounter % 14 === 0 && routerNode) {
+        if (activeSpeakerDotId) {
+          const speakerNode = nodes.find((n) => n.id === activeSpeakerDotId);
+          if (speakerNode) {
+            particlesRef.current.push({
+              fromX: routerNode.x,
+              fromY: routerNode.y,
+              toX: speakerNode.x,
+              toY: speakerNode.y,
+              progress: 0,
+              speed: 0.04,
+              color: speakerNode.color,
+              size: 4,
+            });
+          }
+        }
+
+        if (processingDotIds.length > 0) {
+          processingDotIds.forEach((pId) => {
+            const pNode = nodes.find((n) => n.id === pId);
+            if (pNode) {
+              particlesRef.current.push({
+                fromX: routerNode.x,
+                fromY: routerNode.y,
+                toX: pNode.x,
+                toY: pNode.y,
+                progress: 0,
+                speed: 0.05,
+                color: "#f59e0b",
+                size: 3,
+              });
+            }
           });
         }
       }
 
       // Draw Connection Lines
-      // User to Router line
       if (userNode && routerNode) {
         ctx.beginPath();
         ctx.moveTo(userNode.x, userNode.y);
@@ -176,30 +203,27 @@ export const MultiplexerTopologyCanvas: React.FC<MultiplexerTopologyCanvasProps>
           ? "rgba(6, 182, 212, 0.7)"
           : "rgba(255, 255, 255, 0.08)";
         ctx.lineWidth = isRouting ? 2.5 : 1.2;
-        if (isRouting) {
-          ctx.setLineDash([4, 4]);
-        } else {
-          ctx.setLineDash([]);
-        }
         ctx.stroke();
-        ctx.setLineDash([]);
       }
 
-      // Router to Dots lines
       nodes.forEach((node) => {
         if (!node.isRouter && !node.isUser && routerNode) {
           const isSpeaking = node.id === activeSpeakerDotId;
+          const isProcessing = processingDotIds.includes(node.id);
+
           ctx.beginPath();
           ctx.moveTo(routerNode.x, routerNode.y);
           ctx.lineTo(node.x, node.y);
           ctx.strokeStyle = isSpeaking
             ? node.color
+            : isProcessing
+            ? "#f59e0b"
             : "rgba(255, 255, 255, 0.08)";
-          ctx.lineWidth = isSpeaking ? 3 : 1;
+          ctx.lineWidth = isSpeaking || isProcessing ? 3 : 1;
           ctx.stroke();
 
-          // If speaking, draw secondary mesh line to adjacent dots
-          if (isSpeaking) {
+          // Inter-dot mesh line if speaking or processing
+          if (isSpeaking || isProcessing) {
             ctx.save();
             ctx.strokeStyle = `${node.color}33`;
             ctx.lineWidth = 1;
@@ -233,33 +257,69 @@ export const MultiplexerTopologyCanvas: React.FC<MultiplexerTopologyCanvasProps>
         ctx.arc(currentX, currentY, p.size, 0, Math.PI * 2);
         ctx.fillStyle = p.color;
         ctx.shadowColor = p.color;
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = 12;
         ctx.fill();
         ctx.restore();
       }
 
-      // Draw Nodes
+      // Draw Nodes in Canvas with rich pulsing canvas rings
       nodes.forEach((node) => {
         const isSpeaking = node.id === activeSpeakerDotId;
+        const isProcessing = processingDotIds.includes(node.id);
         const isHovered = hoveredNode?.id === node.id;
 
         ctx.save();
 
-        // Pulsing rings for active speakers or router
-        if (isSpeaking || (node.isRouter && isRouting)) {
-          const pulseSize = node.radius + 8 + Math.sin(stepCounter * 0.1) * 4;
+        // Canvas Speaking Waves & Glow
+        if (isSpeaking) {
+          // Inner energetic ripple
+          const pulseSize = node.radius + 6 + Math.sin(stepCounter * 0.15) * 6;
           ctx.beginPath();
           ctx.arc(node.x, node.y, pulseSize, 0, Math.PI * 2);
-          ctx.strokeStyle = `${node.color}66`;
-          ctx.lineWidth = 2;
+          ctx.strokeStyle = `${node.color}99`;
+          ctx.lineWidth = 2.5;
           ctx.stroke();
 
-          // Outer aura
+          // Outer shockwave
+          const waveSize = node.radius + 14 + (stepCounter % 40) * 0.8;
+          const waveAlpha = Math.max(0, 1 - (stepCounter % 40) / 40);
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, waveSize, 0, Math.PI * 2);
+          ctx.strokeStyle = `${node.color}${Math.floor(waveAlpha * 255)
+            .toString(16)
+            .padStart(2, "0")}`;
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+
           ctx.shadowColor = node.color;
+          ctx.shadowBlur = 35;
+        } else if (isProcessing) {
+          // Orbiting computational dash arc
+          ctx.save();
+          ctx.translate(node.x, node.y);
+          ctx.rotate(stepCounter * 0.08);
+          ctx.beginPath();
+          ctx.arc(0, 0, node.radius + 8, 0, Math.PI * 1.5);
+          ctx.strokeStyle = "#f59e0b";
+          ctx.lineWidth = 2;
+          ctx.setLineDash([4, 4]);
+          ctx.stroke();
+          ctx.restore();
+
+          ctx.shadowColor = "#f59e0b";
+          ctx.shadowBlur = 25;
+        } else if (node.isRouter && isRouting) {
+          const pulseSize = node.radius + 7 + Math.sin(stepCounter * 0.12) * 5;
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, pulseSize, 0, Math.PI * 2);
+          ctx.strokeStyle = "rgba(99, 102, 241, 0.7)";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.shadowColor = "#6366f1";
           ctx.shadowBlur = 24;
         } else if (isHovered) {
           ctx.shadowColor = node.color;
-          ctx.shadowBlur = 14;
+          ctx.shadowBlur = 16;
         }
 
         // Main Node Circle
@@ -274,22 +334,28 @@ export const MultiplexerTopologyCanvas: React.FC<MultiplexerTopologyCanvasProps>
         ctx.fillStyle = node.color;
         ctx.fill();
 
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = isSpeaking ? "#ffffff" : "rgba(255, 255, 255, 0.4)";
+        ctx.lineWidth = isSpeaking || isProcessing ? 2.5 : 2;
+        ctx.strokeStyle =
+          isSpeaking || isProcessing ? "#ffffff" : "rgba(255, 255, 255, 0.4)";
         ctx.stroke();
         ctx.restore();
 
         // Node Label
         ctx.save();
-        ctx.fillStyle = isSpeaking ? "#ffffff" : "#cbd5e1";
-        ctx.font = isSpeaking
-          ? "bold 11px Plus Jakarta Sans, sans-serif"
-          : "10px Plus Jakarta Sans, sans-serif";
+        ctx.fillStyle = isSpeaking || isProcessing ? "#ffffff" : "#cbd5e1";
+        ctx.font =
+          isSpeaking || isProcessing
+            ? "bold 11px Plus Jakarta Sans, sans-serif"
+            : "10px Plus Jakarta Sans, sans-serif";
         ctx.textAlign = "center";
         ctx.fillText(node.name, node.x, node.y + node.radius + 14);
 
         // Subtitle / Topic
-        ctx.fillStyle = isSpeaking ? node.color : "#64748b";
+        ctx.fillStyle = isSpeaking
+          ? node.color
+          : isProcessing
+          ? "#f59e0b"
+          : "#64748b";
         ctx.font = "8.5px JetBrains Mono, monospace";
         const shortTopic =
           node.topic.length > 20 ? `${node.topic.slice(0, 18)}..` : node.topic;
@@ -343,11 +409,12 @@ export const MultiplexerTopologyCanvas: React.FC<MultiplexerTopologyCanvasProps>
       window.removeEventListener("resize", handleResize);
       canvas.removeEventListener("mousemove", handleMouseMove);
       canvas.removeEventListener("click", handleClick);
+      resizeObserver.disconnect();
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [dots, activeSpeakerDotId, isRouting]);
+  }, [dots, activeSpeakerDotId, processingDotIds, isRouting]);
 
   return (
     <div
@@ -367,21 +434,98 @@ export const MultiplexerTopologyCanvas: React.FC<MultiplexerTopologyCanvasProps>
         )}
       </div>
 
-      {/* Legend */}
+      {/* Legend with speaking and processing indicators */}
       <div className="absolute top-3 right-4 z-10 hidden sm:flex items-center gap-3 text-[10px] font-mono text-slate-400 pointer-events-none">
         <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-cyan-400"></span> Entrada
+          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span> Falando
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-indigo-500"></span> Router
+          <span className="w-2 h-2 rounded-full bg-amber-400 animate-spin"></span> Processando
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-emerald-400"></span> Dot Ativo
+          <span className="w-2 h-2 rounded-full bg-indigo-500"></span> Nexus Master
         </span>
       </div>
 
-      {/* Canvas */}
+      {/* Canvas Layer */}
       <canvas ref={canvasRef} className="w-full h-full block" />
+
+      {/* REAL CSS GLOW & PULSE OVERLAY LAYER (Positioned directly over active nodes) */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {renderedNodes.map((node) => {
+          const isSpeaking = node.id === activeSpeakerDotId;
+          const isProcessing = processingDotIds.includes(node.id);
+          const isRouterActive = node.isRouter && isRouting;
+
+          if (!isSpeaking && !isProcessing && !isRouterActive) return null;
+
+          return (
+            <div
+              key={`css-glow-${node.id}`}
+              className="absolute pointer-events-none flex items-center justify-center"
+              style={
+                {
+                  left: `${node.x}px`,
+                  top: `${node.y}px`,
+                  "--dot-color": node.color,
+                } as React.CSSProperties
+              }
+            >
+              {/* CSS Speaking Pulsing Aura & Shockwaves */}
+              {isSpeaking && (
+                <>
+                  <div
+                    className="absolute w-16 h-16 rounded-full dot-css-shockwave"
+                    style={{ borderColor: node.color }}
+                  />
+                  <div
+                    className="absolute w-20 h-20 rounded-full dot-css-shockwave"
+                    style={{ borderColor: node.color, animationDelay: "0.6s" }}
+                  />
+                  <div
+                    className="absolute w-12 h-12 rounded-full dot-css-pulse-speaking"
+                    style={{
+                      backgroundColor: `${node.color}40`,
+                    }}
+                  />
+                  <span className="absolute px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase tracking-wider bg-slate-950/95 text-cyan-300 border border-cyan-400/60 dot-css-badge-speaking whitespace-nowrap shadow-lg">
+                    🔊 FALANDO
+                  </span>
+                </>
+              )}
+
+              {/* CSS Processing Orbital Halo, Spin & Glow */}
+              {isProcessing && (
+                <>
+                  <div className="absolute w-16 h-16 rounded-full border-2 border-dashed border-amber-400 dot-css-processing-spin" />
+                  <div className="absolute w-20 h-20 rounded-full border border-amber-300/60 dot-css-processing-ripple" />
+                  <div
+                    className="absolute w-12 h-12 rounded-full dot-css-processing-glow"
+                    style={{ backgroundColor: "rgba(245, 158, 11, 0.3)" }}
+                  />
+                  <span className="absolute px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase tracking-wider bg-slate-950/95 text-amber-300 border border-amber-400/60 dot-css-badge-processing whitespace-nowrap shadow-lg">
+                    ⚡ PROCESSANDO DADOS
+                  </span>
+                </>
+              )}
+
+              {/* CSS Router Nexus Glow */}
+              {isRouterActive && (
+                <>
+                  <div className="absolute w-20 h-20 rounded-full border border-indigo-500/80 dot-css-processing-spin" />
+                  <div
+                    className="absolute w-14 h-14 rounded-full dot-css-router-glow"
+                    style={{ backgroundColor: "rgba(99, 102, 241, 0.35)" }}
+                  />
+                  <span className="absolute px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase tracking-wider bg-slate-950/95 text-indigo-300 border border-indigo-400/60 dot-css-badge-router whitespace-nowrap shadow-lg">
+                    NEXUS ATIVO
+                  </span>
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
 
       {/* Hover Info Tooltip */}
       {hoveredNode && hoveredNode.dotRef && (

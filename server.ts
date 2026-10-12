@@ -37,6 +37,147 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
+// Integrated Multiplexer Master Chat Endpoint
+app.post("/api/multiplexer/chat", async (req, res) => {
+  try {
+    const { prompt, history, activeDots, modelMode } = req.body;
+    if (!prompt) {
+      return res.status(400).json({ error: "Missing prompt" });
+    }
+
+    const dotsSummary = Array.isArray(activeDots)
+      ? activeDots.map((d: any) => `- ${d.name} (${d.topic})`).join("\n")
+      : "";
+
+    const selectedModel = modelMode === "gemini-3.1-pro" ? "gemini-3.1-pro-preview" : "gemini-3.8-flash";
+
+    if (ai) {
+      try {
+        const systemInstruction = `Você é o Núcleo Integrador do Multiplexer Neural Dot-Nexus (IA Master Orquestradora), respondendo sempre em Português Brasileiro (pt-BR).
+Sua função:
+1. Escutar o usuário com atenção total e responder de forma direta e concisa (máximo 2 frases).
+2. Apresentar uma síntese ágil e anunciar que os Dots especialistas enviarão suas opiniões para forjar o consenso.
+3. Estilo natural para fala/áudio (modo Gemini Live).`;
+
+        const response = await ai.models.generateContent({
+          model: selectedModel,
+          contents: prompt,
+          config: {
+            systemInstruction,
+            temperature: 0.6,
+          },
+        });
+
+        return res.json({
+          text: (response.text || "").trim(),
+          senderName: "Multiplexer Neural Core",
+          voice: "Zephyr",
+        });
+      } catch (err: any) {
+        console.warn("Multiplexer AI generation error, using fallback:", err.message);
+      }
+    }
+
+    return res.json({
+      text: "Recebido. Estou orquestrando as opiniões de todos os Dots especialistas para forjar o consenso definitivo agora.",
+      senderName: "Multiplexer Neural Core",
+      voice: "Zephyr",
+    });
+  } catch (err: any) {
+    console.error("Multiplexer chat error:", err);
+    res.status(500).json({ error: err.message || "Failed to process multiplexer chat" });
+  }
+});
+
+// Nexus Consensus Formulation Endpoint
+app.post("/api/nexus/consensus", async (req, res) => {
+  try {
+    const { query, opinions, participatingDots } = req.body;
+    const dotsNames = Array.isArray(participatingDots)
+      ? participatingDots.map((d: any) => (typeof d === "string" ? d : d.name))
+      : ["Dr. Prometheus", "Dra. Gaia"];
+
+    const opinionsText = Array.isArray(opinions)
+      ? opinions.map((o: any) => `${o.dotName || "Dot"}: "${o.text}"`).join("\n")
+      : "";
+
+    if (ai) {
+      try {
+        const prompt = `Pergunta/Solicitação do Usuário: "${query}"
+
+Opiniões dos Dots especialistas enviadas para o Nexus:
+${opinionsText}
+
+Com base nas opiniões de todos os Dots, formule o Consenso Final do Nexus.
+REQUISITOS ESTRITOS:
+1. Responda em formato JSON estrito.
+2. "title": Título curto, impactante e criativo para a invenção/resposta final (máximo 5 a 6 palavras).
+3. "shortSummary": Resumo em poucas palavras (1 a 2 frases concisas) do que TODOS inventaram ou responderam juntos para a solicitação.
+4. "feasibilityScore": número de 88 a 99.
+
+{
+  "title": "Título Criativo da Solução",
+  "shortSummary": "Resumo conciso em poucas palavras da invenção unificada.",
+  "targetCrisis": "Tópico central em 3 palavras",
+  "feasibilityScore": 95
+}`;
+
+        const response = await ai.models.generateContent({
+          model: "gemini-3.8-flash",
+          contents: prompt,
+          config: {
+            responseMimeType: "application/json",
+            temperature: 0.4,
+          },
+        });
+
+        const parsed = JSON.parse(response.text || "{}");
+        if (parsed.title && parsed.shortSummary) {
+          return res.json({
+            id: `consensus-${Date.now()}`,
+            title: parsed.title,
+            shortSummary: parsed.shortSummary,
+            targetCrisis: parsed.targetCrisis || query,
+            feasibilityScore: parsed.feasibilityScore || 94,
+            participatingDots: dotsNames,
+            timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+          });
+        }
+      } catch (err: any) {
+        console.warn("Consensus AI generation error, using fallback:", err.message);
+      }
+    }
+
+    // Smart heuristic fallback
+    const fallbackTitles = [
+      "Protocolo Bio-Solar Quântico",
+      "Malha Energética Regenerativa",
+      "Enxame Nanobiótico de Reparo",
+      "Rede Descentralizada de Recursos",
+      "Matriz de Fusão Compacta Hélio-3",
+      "Plataforma Genômica de Resposta Rápida",
+    ];
+    const pickedTitle = fallbackTitles[Math.floor(Math.random() * fallbackTitles.length)];
+    const summaryText =
+      Array.isArray(opinions) && opinions.length >= 2
+        ? `Convergência de ${opinions[0].dotName} e ${opinions[1].dotName}: fusão tecnológica pioneira para resolver "${query.slice(0, 45)}" com implementação escalável imediata.`
+        : `Solução de alto impacto forjada em consenso pelos Dots para responder à demanda "${query.slice(0, 40)}".`;
+
+    return res.json({
+      id: `consensus-${Date.now()}`,
+      title: pickedTitle,
+      shortSummary: summaryText,
+      targetCrisis: query,
+      feasibilityScore: 96,
+      participatingDots: dotsNames,
+      timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+    });
+  } catch (err: any) {
+    console.error("Consensus generation error:", err);
+    res.status(500).json({ error: err.message || "Failed to formulate consensus" });
+  }
+});
+
 // Multiplexer Router Endpoint
 app.post("/api/multiplexer/route", async (req, res) => {
   try {
@@ -51,14 +192,15 @@ app.post("/api/multiplexer/route", async (req, res) => {
     }
 
     if (ai) {
-      const dotsSummary = activeDots
-        .map(
-          (d: any) =>
-            `- ID: "${d.id}", Name: "${d.name}", Domain: "${d.topic}", Persona: "${d.systemPrompt.slice(0, 100)}..."`
-        )
-        .join("\n");
+      try {
+        const dotsSummary = activeDots
+          .map(
+            (d: any) =>
+              `- ID: "${d.id}", Name: "${d.name}", Domain: "${d.topic}", Persona: "${d.systemPrompt.slice(0, 100)}..."`
+          )
+          .join("\n");
 
-      const prompt = `You are the master Dot-Nexus Agent Multiplexer Router.
+        const prompt = `You are the master Dot-Nexus Agent Multiplexer Router.
 Analyze the user's input and select the most appropriate autonomous AI Dot to handle it.
 
 User Input: "${query}"
@@ -75,21 +217,22 @@ Return STRICT JSON format:
   "secondaryDotId": "id of another dot that may proactively chime in, or null"
 }`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-          temperature: 0.2,
-        },
-      });
+        const response = await ai.models.generateContent({
+          model: "gemini-3.8-flash",
+          contents: prompt,
+          config: {
+            responseMimeType: "application/json",
+            temperature: 0.2,
+          },
+        });
 
-      const text = response.text || "{}";
-      try {
+        const text = response.text || "{}";
         const parsed = JSON.parse(text);
-        return res.json(parsed);
-      } catch (err) {
-        // Fallback below
+        if (parsed.selectedDotId) {
+          return res.json(parsed);
+        }
+      } catch (err: any) {
+        console.warn("Route AI generation error, using heuristic fallback:", err.message);
       }
     }
 
@@ -151,56 +294,60 @@ Instruções fundamentais:
 3. Se o assunto envolver problemas da humanidade (clima, fome, doenças, energia, superinteligência), proponha soluções concretas baseadas na sua especialidade.
 4. Ao final, se sua proatividade for alta (${proactivity || 75}%), lance um gancho desafiador ou convite para outro agente complementar.`;
 
-      const contents = historyText
-        ? `Contexto recente do diálogo:\n${historyText}\n\nEntrada do Usuário/Contexto Atual:\n${prompt}`
-        : prompt;
+      try {
+        const contents = historyText
+          ? `Contexto recente do diálogo:\n${historyText}\n\nEntrada do Usuário/Contexto Atual:\n${prompt}`
+          : prompt;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
-        contents,
-        config: {
-          systemInstruction,
-          temperature: 0.7,
-        },
-      });
+        const response = await ai.models.generateContent({
+          model: "gemini-3.8-flash",
+          contents,
+          config: {
+            systemInstruction,
+            temperature: 0.7,
+          },
+        });
 
-      const responseText = response.text || "Compreendido. O sistema está analisando os parâmetros de solução.";
+        const responseText = response.text || "Compreendido. O sistema está analisando os parâmetros de solução.";
 
-      // Check for proactive chime in if other active dots exist
-      let proactiveChime = null;
-      if (otherDots && otherDots.length > 0 && (proactivity || 75) > 60) {
-        const eligible = otherDots.filter((d: any) => d.id !== dot.id && d.active);
-        if (eligible.length > 0 && Math.random() < (proactivity || 75) / 100) {
-          const chimeDot = eligible[Math.floor(Math.random() * eligible.length)];
-          const chimePrompt = `O agente ${dot.name} acabou de afirmar:
+        // Check for proactive chime in if other active dots exist
+        let proactiveChime = null;
+        if (otherDots && otherDots.length > 0 && (proactivity || 75) > 60) {
+          const eligible = otherDots.filter((d: any) => d.id !== dot.id && d.active);
+          if (eligible.length > 0 && Math.random() < (proactivity || 75) / 100) {
+            const chimeDot = eligible[Math.floor(Math.random() * eligible.length)];
+            const chimePrompt = `O agente ${dot.name} acabou de afirmar:
 "${responseText}"
 
 Como ${chimeDot.name} (Especialista em ${chimeDot.topic}), elabore uma intervenção proativa rápida (1-2 frases concisas) apoiando, complementando ou contestando tecnicamente a proposta.`;
 
-          const chimeRes = await ai.models.generateContent({
-            model: "gemini-3.8-flash",
-            contents: chimePrompt,
-            config: {
-              systemInstruction: `Você é ${chimeDot.name}. Seja breve, assertivo e colaborativo em português.`,
-              temperature: 0.8,
-            },
-          });
+            const chimeRes = await ai.models.generateContent({
+              model: "gemini-3.8-flash",
+              contents: chimePrompt,
+              config: {
+                systemInstruction: `Você é ${chimeDot.name}. Seja breve, assertivo e colaborativo em português.`,
+                temperature: 0.8,
+              },
+            });
 
-          if (chimeRes.text) {
-            proactiveChime = {
-              dotId: chimeDot.id,
-              dotName: chimeDot.name,
-              voice: chimeDot.voice,
-              text: chimeRes.text.trim(),
-            };
+            if (chimeRes.text) {
+              proactiveChime = {
+                dotId: chimeDot.id,
+                dotName: chimeDot.name,
+                voice: chimeDot.voice,
+                text: chimeRes.text.trim(),
+              };
+            }
           }
         }
-      }
 
-      return res.json({
-        text: responseText.trim(),
-        proactiveChime,
-      });
+        return res.json({
+          text: responseText.trim(),
+          proactiveChime,
+        });
+      } catch (err: any) {
+        console.warn("Dot chat AI generation error, using fallback:", err.message);
+      }
     }
 
     // High quality offline fallback
@@ -297,7 +444,8 @@ app.post("/api/debate/step", async (req, res) => {
     }
 
     if (ai) {
-      const prompt = `Você está participando de uma Mesa-Redonda Autônoma de Soluções da Humanidade no Dot-Nexus.
+      try {
+        const prompt = `Você está participando de uma Mesa-Redonda Autônoma de Soluções da Humanidade no Dot-Nexus.
 TEMA CENTRAL: "${topic}"
 
 Seu Papel: ${currentSpeaker.name} (Especialidade: ${currentSpeaker.topic})
@@ -311,37 +459,81 @@ Instruções:
 - Formule um argumento vigoroso de 2 ou 3 frases: aprofunde a viabilidade tecnológica, resolva uma lacuna do ponto anterior ou proponha uma integração com seu domínio.
 - Mantenha tom cooperativo, porém analiticamente rigoroso.`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
-        contents: prompt,
-        config: {
-          temperature: 0.8,
-        },
-      });
+        const response = await ai.models.generateContent({
+          model: "gemini-3.8-flash",
+          contents: prompt,
+          config: {
+            temperature: 0.8,
+          },
+        });
 
-      return res.json({
-        speakerId: currentSpeaker.id,
-        speakerName: currentSpeaker.name,
-        voice: currentSpeaker.voice,
-        text: (response.text || "").trim(),
-      });
+        if (response.text && response.text.trim()) {
+          return res.json({
+            speakerId: currentSpeaker.id,
+            speakerName: currentSpeaker.name,
+            voice: currentSpeaker.voice,
+            text: response.text.trim(),
+          });
+        }
+      } catch (err: any) {
+        console.warn("Debate step AI generation error, using resilient fallback:", err.message);
+      }
     }
 
-    // Fallback debate response
-    const fallbacks: Record<string, string> = {
-      gaia: `Integrando com os bioprocessos da biosfera, garantimos que essa solução não cause impactos ecológicos adversos e regenere os ciclos naturais da Terra.`,
-      prometheus: `Do ponto de vista energético, podemos sustentar esse projeto em escala planetária alimentando-o diretamente com micro-fusão de hélio-3 sem custo operacional contínuo.`,
-      hippocrates: `Ao proteger o tecido biológico celular dos indivíduos com nanotecnologia preventiva, asseguramos longevidade e resistência a choques patogênicos simultaneamente.`,
-      sophia: `Consolidando isso sob um núcleo de alinhamento ético e consenso distribuído, eliminamos qualquer risco existencial de descontrole cibernético.`,
-      quantum: `A modelagem estocástica quântica confirma viabilidade orçamentária superior a 99,4% com amortização total em menos de 18 meses.`,
+    // Dynamic resilient fallback for debate step (handles 429 quota exhaustion seamlessly)
+    const speakerIdLower = (currentSpeaker.id || "").toLowerCase();
+    const domainLower = (currentSpeaker.topic || "").toLowerCase();
+    const speakerName = currentSpeaker.name || "Especialista";
+
+    const dynamicArguments: Record<string, string[]> = {
+      gaia: [
+        `Integrando com a regeneração da biosfera, aplicamos microbiomas sintéticos que reequilibram os ciclos de carbono e nutrientes em escala continental em até 36 meses.`,
+        `Concordo com o foco pragmático: ao acoplarmos matrizes de sensoriamento satelital a bio-hidrogéis, impedimos a desertificação e resgatamos bacias hidrográficas vitais.`,
+        `Para garantir sustentabilidade perene, a infraestrutura deve seguir princípios de biofonia e economia circular de ciclo fechado, sem geração de resíduos tóxicos.`,
+      ],
+      prometheus: [
+        `Do ponto de vista energético, sustentamos essa malha inteira através de microrreatores de fusão limpa de Hélio-3, gerando megawatts descentralizados a custo marginal zero.`,
+        `O gargalo não é mais térmico: com supercondutores de temperatura ambiente, eliminamos 98% das perdas de transmissão entre nós produtores e consumidores.`,
+        `Propomos acoplar células fotovoltaicas de perovskita tandem de 38% de eficiência à rede de armazenamento cinético, garantindo redundância ininterrupta.`,
+      ],
+      hippocrates: [
+        `Ao proteger o tecido biológico dos indivíduos com nanosensores profiláticos e vetores CRISPR-Prime, asseguramos imunidade adaptativa contra qualquer patógeno emergente.`,
+        `Saúde humana e ecossistema são inseparáveis: erradicar a senescência celular precoce permite que gerações mais longevas construam soluções de longo prazo com pleno vigor.`,
+        `Integrando síntese farmacológica sob demanda nos hospitais comunitários, garantimos que 100% da população tenha acesso imediato a terapias personalizadas.`,
+      ],
+      sophia: [
+        `Consolidando isso sob um protocolo de Alinhamento Simbiótico e auditoria formal verificada, eliminamos qualquer risco de viés ou desvio de governança autônoma.`,
+        `A tecnologia só é legítima quando descentraliza poder e eleva a dignidade humana. O consenso dos Dots deve ser transparente e criptograficamente auditável.`,
+        `Apoio a proposta, desde que estabeleçamos salvaguardas éticas imutáveis que impeçam assimetria de acesso e monopólios epistêmicos na distribuição dos recursos.`,
+      ],
+      quantum: [
+        `Nossos modelos estocásticos quânticos comprovam que a curva de viabilidade econômica atinge equilíbrio positivo em apenas 14 meses com retorno social estimado em 18x.`,
+        `A sincronização quântica de rotas de distribuição previne gargalos na cadeia de suprimentos e dissipa volatilidade de preços em milissegundos.`,
+        `Validamos a estabilidade matemática deste vetor de implementação: o risco de colapso sistêmico foi reduzido a menos de 0,002% nas simulações de Monte Carlo.`,
+      ],
     };
 
-    const key = Object.keys(fallbacks).find((k) => currentSpeaker.id.toLowerCase().includes(k)) || "gaia";
+    let chosenPool: string[] | undefined;
+    for (const [key, pool] of Object.entries(dynamicArguments)) {
+      if (speakerIdLower.includes(key) || domainLower.includes(key)) {
+        chosenPool = pool;
+        break;
+      }
+    }
+
+    const fallbackOptions = chosenPool || [
+      `Como ${speakerName}, confirmo que nossos modelos de ${currentSpeaker.topic} validam plenamente a viabilidade operacional desta estratégia coordenada.`,
+      `Avançando nesta linha: integrando nossos algoritmos de ${currentSpeaker.topic}, podemos acelerar a execução desta proposta em escala global com máxima precisão.`,
+      `Do ponto de vista de ${currentSpeaker.topic}, o consenso formado aborda exatamente o ponto crítico necessário para estabilizar este desafio da humanidade.`,
+    ];
+
+    const chosenText = fallbackOptions[Math.floor(Math.random() * fallbackOptions.length)];
+
     return res.json({
       speakerId: currentSpeaker.id,
       speakerName: currentSpeaker.name,
       voice: currentSpeaker.voice,
-      text: fallbacks[key] || `Como ${currentSpeaker.name}, confirmo que nossos modelos de ${currentSpeaker.topic} validam esta trajetória de solução estruturada.`,
+      text: chosenText,
     });
   } catch (err: any) {
     console.error("Debate step error:", err);
@@ -355,7 +547,8 @@ app.post("/api/humanity/solution", async (req, res) => {
     const { topic, transcript, participatingDots } = req.body;
 
     if (ai) {
-      const prompt = `A partir do debate dos agentes autônomos sobre: "${topic}"
+      try {
+        const prompt = `A partir do debate dos agentes autônomos sobre: "${topic}"
 Diálogo acumulado:
 ${transcript ? transcript.slice(-1200) : "Várias propostas de convergência tecnológica foram apresentadas."}
 
@@ -373,22 +566,27 @@ Gere um Blueprint oficial de Solução para a Humanidade em formato JSON estrito
   ]
 }`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-          temperature: 0.3,
-        },
-      });
+        const response = await ai.models.generateContent({
+          model: "gemini-3.8-flash",
+          contents: prompt,
+          config: {
+            responseMimeType: "application/json",
+            temperature: 0.3,
+          },
+        });
 
-      const parsed = JSON.parse(response.text || "{}");
-      return res.json({
-        ...parsed,
-        id: `sol-${Date.now()}`,
-        timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
-        authors: participatingDots?.map((d: any) => d.name) || ["Dot-Nexus AI Consensus"],
-      });
+        const parsed = JSON.parse(response.text || "{}");
+        if (parsed.title && parsed.summary) {
+          return res.json({
+            ...parsed,
+            id: `sol-${Date.now()}`,
+            timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+            authors: participatingDots?.map((d: any) => d.name) || ["Dot-Nexus AI Consensus"],
+          });
+        }
+      } catch (err: any) {
+        console.warn("Solution synthesis AI generation error, using resilient fallback:", err.message);
+      }
     }
 
     return res.json({
@@ -396,12 +594,12 @@ Gere um Blueprint oficial de Solução para a Humanidade em formato JSON estrito
       title: `Protocolo Unificado: ${topic || "Resolução Planetária"}`,
       targetCrisis: topic || "Crise Global Complexa",
       status: "Consenso Alcançado",
-      feasibilityScore: 92,
+      feasibilityScore: 95,
       summary: "Convergência sinérgica entre energia limpa inesgotável, nanobioengenharia e alinhamento ético de agentes de IA.",
       technicalBreakdown: [
-        "Desdobramento modular de reatores limpos acoplados a micro-redes",
-        "Sensoriamento em tempo real por constelação de satélites e nós IoT",
-        "Governança por consenso autônomo e auditoria criptográfica aberta",
+        "Desdobramento modular de microrreatores limpos acoplados a micro-redes elétricas",
+        "Sensoriamento em tempo real por constelação de satélites e nós IoT regenerativos",
+        "Governança por consenso autônomo e auditoria criptográfica aberta em rede",
       ],
       timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
       authors: participatingDots?.map((d: any) => d.name) || ["Dr. Prometheus", "Dr. Gaia", "Dra. Sophia"],

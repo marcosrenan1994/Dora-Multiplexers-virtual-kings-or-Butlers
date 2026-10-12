@@ -22,6 +22,9 @@ interface HeaderNavbarProps {
   totalSolutionsCount: number;
   onOpenNewDotModal: () => void;
   onSelectPresetTopic: (topic: string) => void;
+  idleSecondsRemaining?: number;
+  isIdleResolving?: boolean;
+  onTriggerImmediateIdleSolve?: () => void;
 }
 
 export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
@@ -35,6 +38,9 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
   totalSolutionsCount,
   onOpenNewDotModal,
   onSelectPresetTopic,
+  idleSecondsRemaining = 30,
+  isIdleResolving = false,
+  onTriggerImmediateIdleSolve,
 }) => {
   return (
     <header className="h-16 border-b border-slate-800/80 bg-[#090d19]/90 px-4 md:px-6 flex items-center justify-between z-30 backdrop-blur-xl shrink-0">
@@ -129,6 +135,42 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
           title={isMuted ? "Ativar síntese de voz TTS" : "Silenciar voz"}
         >
           {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+        </button>
+
+        {/* 30s Idle Autonomy Countdown indicator */}
+        <button
+          onClick={onTriggerImmediateIdleSolve}
+          disabled={isIdleResolving}
+          className={`hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-mono border transition-all ${
+            isIdleResolving
+              ? "bg-cyan-500/15 border-cyan-500/40 text-cyan-300 animate-pulse"
+              : idleSecondsRemaining <= 5
+              ? "bg-rose-500/10 border-rose-500/30 text-rose-300"
+              : "bg-slate-900/90 border-slate-800 hover:border-amber-500/40 hover:bg-slate-800 text-slate-300"
+          }`}
+          title="Autonomia de 30s da sala: Caso não pergunte nada por 30s, os Dots resolvem um desafio global aleatório. Clique para resolver agora."
+        >
+          <span
+            className={`w-2 h-2 rounded-full ${
+              isIdleResolving
+                ? "bg-cyan-400 animate-ping"
+                : idleSecondsRemaining <= 5
+                ? "bg-rose-400 animate-ping"
+                : "bg-amber-400 animate-pulse"
+            }`}
+          ></span>
+          <span className="text-slate-400 text-[11px]">Auto 30s:</span>
+          <span
+            className={`font-bold text-[11px] ${
+              isIdleResolving
+                ? "text-cyan-300 font-semibold"
+                : idleSecondsRemaining <= 5
+                ? "text-rose-400"
+                : "text-amber-400"
+            }`}
+          >
+            {isIdleResolving ? "Resolvendo!" : `${idleSecondsRemaining}s`}
+          </span>
         </button>
 
         {/* Live Status indicator */}

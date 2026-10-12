@@ -159,3 +159,16 @@ export const INITIAL_SOLUTIONS: HumanitySolution[] = [
     upvotes: 38,
   },
 ];
+
+export const IDLE_UNSOLVED_CHALLENGES: string[] = [
+  "Como erradicar a escassez de água potável no Saara e no semiárido através de coletores atmosféricos de grafeno movidos a energia solar?",
+  "Como gerar energia limpa ininterrupta usando micro-reatores compactos de fusão com plasma confinado e hélio-3?",
+  "Como sintetizar enzimas biomiméticas capazes de decompor 100% dos microplásticos dos oceanos em matéria orgânica inofensiva?",
+  "Como proteger a grade elétrica planetária e satélites contra tempestades solares geomagnéticas extremas de classe X?",
+  "Como erradicar a fome mundial combinando bio-fazendas verticais oceânicas e nutrientes sintetizados por algas geneticamente otimizadas?",
+  "Como curar e regenerar tecidos cardiovasculares humanos através de nanorrobôs biomiméticos e reprogramação epigenética in vivo?",
+  "Como eliminar emissões de carbono de indústrias pesadas de aço e cimento usando catalisadores plasmáticos e bio-calcificação?",
+  "Como criar redes quânticas de distribuição de recursos para neutralizar crises financeiras e garantir prosperidade universal?",
+  "Como limpar o lixo espacial da órbita terrestre baixa utilizando feixes descentralizados de laser e rebocadores solares autônomos?",
+  "Como desacelerar a acidificação dos oceanos e regenerar barreiras de corais com micro-biosferas alcalinas inteligentes?",
+];

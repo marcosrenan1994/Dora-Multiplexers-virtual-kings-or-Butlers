@@ -90,8 +90,80 @@ export const DebateTranscriptFeed: React.FC<DebateTranscriptFeedProps> = ({
             const isUser = msg.senderType === "user";
             const isRouter = msg.senderType === "router";
             const isSystem = msg.senderType === "system";
+            const isMultiplexer = msg.senderType === "multiplexer";
+            const isConsensus = msg.isConsensus && msg.consensus;
             const dot = getDot(msg.senderDotId);
             const isCurrentlySpeaking = activeSpeakingMessageId === msg.id;
+
+            if (isConsensus && msg.consensus) {
+              const c = msg.consensus;
+              return (
+                <div
+                  key={msg.id}
+                  className="mx-auto max-w-2xl w-full p-4 md:p-5 rounded-2xl bg-gradient-to-br from-[#0c1630] via-[#101e40] to-[#080d1d] border-2 border-amber-500/50 shadow-2xl shadow-amber-500/15 ring-1 ring-amber-400/30 animate-fade-in relative group"
+                >
+                  {/* Decorative glowing ambient orb */}
+                  <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+
+                  {/* Header Badge */}
+                  <div className="flex items-center justify-between mb-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1 rounded-lg bg-amber-500/20 border border-amber-500/30 text-amber-300">
+                        <CheckCircle2 className="w-4 h-4 text-amber-400" />
+                      </div>
+                      <span className="font-mono text-xs font-bold uppercase tracking-wider text-amber-300">
+                        Consenso Final do Nexus
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                        {c.feasibilityScore || 95}% Viabilidade
+                      </span>
+                      <span className="text-[10px] font-mono text-slate-400">
+                        {c.timestamp}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Title of the consensus invention */}
+                  <h3 className="font-['Space_Grotesk'] text-base md:text-lg font-bold text-white mb-2 tracking-wide text-amber-100 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>{c.title}</span>
+                  </h3>
+
+                  {/* Short summary of what everyone devised */}
+                  <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 text-xs md:text-sm text-slate-100 leading-relaxed font-sans mb-3">
+                    <span className="font-bold text-cyan-300 font-mono text-[11px] block mb-1 uppercase tracking-wider">
+                      Resumo da Invenção Consensuada:
+                    </span>
+                    {c.shortSummary}
+                  </div>
+
+                  {/* Participating Dots & Audio Replay */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800/80 text-[11px] font-mono text-slate-400">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-slate-400">Invenção conjunta de:</span>
+                      <span className="text-amber-300 font-semibold">
+                        {c.participatingDots.join(", ")}
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={() => onPlayMessageVoice(msg)}
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-mono transition-all ${
+                        isCurrentlySpeaking
+                          ? "bg-amber-500/30 text-amber-200 border border-amber-500/40 animate-pulse font-bold"
+                          : "bg-slate-900 hover:bg-slate-800 text-amber-300 border border-slate-700"
+                      }`}
+                    >
+                      <Volume2 className="w-3.5 h-3.5" />
+                      <span>{isCurrentlySpeaking ? "Ouvindo Consenso..." : "Ouvir Resumo do Consenso"}</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            }
 
             if (isRouter) {
               return (
@@ -135,14 +207,26 @@ export const DebateTranscriptFeed: React.FC<DebateTranscriptFeedProps> = ({
               >
                 {/* Avatar */}
                 <div
-                  className="w-8 h-8 rounded-xl shrink-0 flex items-center justify-center text-white text-xs font-bold shadow-md ring-1 ring-white/10"
+                  className={`w-8 h-8 rounded-xl shrink-0 flex items-center justify-center text-white text-xs font-bold shadow-md ring-1 ring-white/10 ${
+                    isMultiplexer
+                      ? "bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-600 ring-cyan-400/50 shadow-cyan-500/30"
+                      : ""
+                  }`}
                   style={{
-                    backgroundColor: isUser
+                    backgroundColor: isMultiplexer
+                      ? undefined
+                      : isUser
                       ? "#06b6d4"
                       : dot?.color || "#6366f1",
                   }}
                 >
-                  {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                  {isUser ? (
+                    <User className="w-4 h-4" />
+                  ) : isMultiplexer ? (
+                    <Share2 className="w-4 h-4 text-white animate-pulse" />
+                  ) : (
+                    <Bot className="w-4 h-4" />
+                  )}
                 </div>
 
                 {/* Message Body */}
@@ -161,6 +245,12 @@ export const DebateTranscriptFeed: React.FC<DebateTranscriptFeedProps> = ({
                       {msg.senderName}
                     </span>
 
+                    {isMultiplexer && (
+                      <span className="text-[10px] font-mono text-cyan-300 bg-cyan-500/15 border border-cyan-500/30 px-1.5 py-0.2 rounded font-semibold">
+                        Orquestrador Pt-BR
+                      </span>
+                    )}
+
                     {dot && (
                       <span className="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-1.5 py-0.2 rounded">
                         {dot.topic}
@@ -170,6 +260,13 @@ export const DebateTranscriptFeed: React.FC<DebateTranscriptFeedProps> = ({
                     {msg.isProactiveChime && (
                       <span className="text-[9px] font-mono text-amber-300 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.2 rounded flex items-center gap-1">
                         <Sparkles className="w-2.5 h-2.5" /> Intervenção Proativa
+                      </span>
+                    )}
+
+                    {msg.opinionTarget && (
+                      <span className="text-[10px] font-mono text-amber-300 bg-amber-500/20 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shadow-sm shadow-amber-500/10">
+                        <Sparkles className="w-3 h-3 text-amber-400 animate-pulse" />
+                        <span>Opinião Enviada ao Nexus</span>
                       </span>
                     )}
 

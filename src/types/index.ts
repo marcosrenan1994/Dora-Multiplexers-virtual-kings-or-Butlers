@@ -1,5 +1,8 @@
 export type VoiceName = 'Zephyr' | 'Puck' | 'Charon' | 'Kore' | 'Fenrir' | 'Aoede' | 'Leda';
 
+export type OrchestrationMode = 'multiplexer_integrated' | 'direct_specialist';
+export type ModelMode = 'gemini-3.8-live' | 'gemini-3.1-pro' | 'gemini-flash-lite';
+
 export interface DotAgent {
   id: string;
   name: string;
@@ -20,10 +23,20 @@ export interface DotAgent {
   };
 }
 
+export interface NexusConsensus {
+  id: string;
+  title: string;
+  shortSummary: string;
+  targetCrisis?: string;
+  participatingDots: string[];
+  timestamp: string;
+  feasibilityScore?: number;
+}
+
 export interface ChatMessage {
   id: string;
   timestamp: string;
-  senderType: 'user' | 'dot' | 'system' | 'router';
+  senderType: 'user' | 'dot' | 'system' | 'router' | 'multiplexer';
   senderDotId?: string;
   senderName: string;
   text: string;
@@ -33,6 +46,9 @@ export interface ChatMessage {
   reasoning?: string;
   isProactiveChime?: boolean;
   voiceName?: VoiceName;
+  isConsensus?: boolean;
+  consensus?: NexusConsensus;
+  opinionTarget?: string;
 }
 
 export interface RoutingDecision {

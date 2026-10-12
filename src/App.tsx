@@ -1,6 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
-import { DotAgent, ChatMessage, HumanitySolution, TelemetryLog, RoutingDecision } from "./types";
-import { INITIAL_DOTS, INITIAL_SOLUTIONS } from "./data/presetDots";
+import {
+  DotAgent,
+  ChatMessage,
+  HumanitySolution,
+  TelemetryLog,
+  RoutingDecision,
+  OrchestrationMode,
+  ModelMode,
+} from "./types";
+import { INITIAL_DOTS, INITIAL_SOLUTIONS, IDLE_UNSOLVED_CHALLENGES } from "./data/presetDots";
 import { HeaderNavbar } from "./components/HeaderNavbar";
 import { DotsManagerSidebar } from "./components/DotsManagerSidebar";
 import { MultiplexerTopologyCanvas } from "./components/MultiplexerTopologyCanvas";
@@ -12,9 +20,11 @@ import { CreateDotModal } from "./components/CreateDotModal";
 import {
   routeMultiplexer,
   chatWithDot,
+  chatWithMultiplexer,
   requestTTS,
   executeDebateStep,
   synthesizeHumanitySolution,
+  formulateNexusConsensus,
 } from "./services/apiClient";
 import { audioSpeechService } from "./services/audioSpeechService";
 
@@ -25,9 +35,9 @@ export default function App() {
     {
       id: "msg-welcome",
       timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
-      senderType: "system",
-      senderName: "Dot-Nexus Core",
-      text: "Protocolo Dot-Nexus Ativo: O agente multiplexador neural está pronto para conectar sua voz e intenções aos Dots autônomos proativos.",
+      senderType: "multiplexer",
+      senderName: "Multiplexer Neural Core",
+      text: "Olá! Sou o Multiplexer Neural integrado. Estou conectado aos Dots autônomos para escutar suas perguntas e conceber soluções em português brasileiro. Você pode usar a barra de digitação ou o Modo Live para conversar por voz.",
     },
   ]);
   const [logs, setLogs] = useState<TelemetryLog[]>([
@@ -52,10 +62,28 @@ export default function App() {
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [globalProactivity, setGlobalProactivity] = useState<number>(85);
 
+  // Live Mode & Orchestration
+  const [isLiveMode, setIsLiveMode] = useState<boolean>(false);
+  const [orchestrationMode, setOrchestrationMode] = useState<OrchestrationMode>("multiplexer_integrated");
+  const [modelMode, setModelMode] = useState<ModelMode>("gemini-3.8-live");
+
   const [activeSpeakerDotId, setActiveSpeakerDotId] = useState<string | null>(null);
   const [activeSpeakingMessageId, setActiveSpeakingMessageId] = useState<string | null>(null);
   const [lastRoutingDecision, setLastRoutingDecision] = useState<RoutingDecision | null>(null);
   const [selectedDot, setSelectedDot] = useState<DotAgent | null>(null);
+
+  // Processing Dot IDs (triggers CSS glow, pulsing aura and rotating dashed ring in canvas)
+  const [processingDotIds, setProcessingDotIds] = useState<string[]>([]);
+
+  // 30 Seconds Inactivity Autonomous Innovation
+  const [idleSecondsRemaining, setIdleSecondsRemaining] = useState<number>(30);
+  const [isIdleResolving, setIsIdleResolving] = useState<boolean>(false);
+  const lastInteractionRef = useRef<number>(Date.now());
+
+  const resetInactivityTimer = () => {
+    lastInteractionRef.current = Date.now();
+    setIdleSecondsRemaining(30);
+  };
 
   // Modal State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -65,6 +93,9 @@ export default function App() {
   const isDebatingRef = useRef<boolean>(false);
   isDebatingRef.current = isDebating;
 
+  const isLiveModeRef = useRef<boolean>(false);
+  isLiveModeRef.current = isLiveMode;
+
   const addLog = (level: TelemetryLog["level"], message: string) => {
     const newLog: TelemetryLog = {
       id: `log-${Date.now()}-${Math.random()}`,
@@ -73,6 +104,22 @@ export default function App() {
       message,
     };
     setLogs((prev) => [newLog, ...prev.slice(0, 80)]);
+  };
+
+  const multiplexerAgent: DotAgent = {
+    id: "router",
+    name: "Multiplexer Neural Core",
+    topic: "Orquestrador Integrado",
+    category: "humanity",
+    voice: "Zephyr",
+    color: "#6366f1",
+    accentBg: "rgba(99, 102, 241, 0.2)",
+    icon: "Bot",
+    systemPrompt: "Master orchestrator",
+    active: true,
+    proactivity: 100,
+    status: "idle",
+    stats: { responsesCount: 0, solutionsCount: 0, confidenceAvg: 100 },
   };
 
   // Play audio for a response
@@ -121,11 +168,230 @@ export default function App() {
     }
   };
 
+  // Live Mode Toggle Handler
+  const handleToggleLiveMode = () => {
+    if (isLiveMode) {
+      setIsLiveMode(false);
+      audioSpeechService.setLiveMode(false);
+      audioSpeechService.stopSpeechRecognition();
+      addLog("voice", "Modo Gemini Live desativado.");
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `msg-live-off-${Date.now()}`,
+          timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+          senderType: "system",
+          senderName: "Modo Live",
+          text: "Modo Gemini Live encerrado. Use a barra para digitar ou reativar.",
+        },
+      ]);
+    } else {
+      setIsLiveMode(true);
+      audioSpeechService.setLiveMode(true);
+      addLog("voice", "Modo Gemini Live ativado! Escuta contínua conectada.");
+
+      const liveNotice: ChatMessage = {
+        id: `msg-live-on-${Date.now()}`,
+        timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+        senderType: "system",
+        senderName: "Gemini Live",
+        text: "🔴 Modo Gemini Live Ativado: Fale livremente no microfone. O Multiplexer ouvirá e responderá em tempo real em Português Brasileiro.",
+      };
+      setMessages((prev) => [...prev, liveNotice]);
+
+      // Spoken greeting
+      playSpeech(
+        "Modo Gemini Live conectado. Estou te escutando em tempo real em português brasileiro. Pode falar sua dúvida ou proposta.",
+        multiplexerAgent
+      );
+
+      // Start continuous recognition
+      audioSpeechService.startSpeechRecognition(
+        (transcript, isFinal) => {
+          if (isFinal && transcript.trim()) {
+            handleSendMessage(transcript.trim());
+          }
+        },
+        (err) => {
+          console.warn("Live voice recognition warning:", err);
+        },
+        () => {
+          // Restart if still in live mode
+          if (isLiveModeRef.current) {
+            audioSpeechService.startSpeechRecognition(
+              (transcript, isFinal) => {
+                if (isFinal && transcript.trim()) {
+                  handleSendMessage(transcript.trim());
+                }
+              },
+              undefined,
+              undefined,
+              true
+            );
+          }
+        },
+        true
+      );
+    }
+  };
+
+  // Autonomous 30-Second Inactivity Room Solver Effect
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (isProcessing || isDebating || isIdleResolving) {
+        lastInteractionRef.current = Date.now();
+        return;
+      }
+
+      const elapsed = Math.floor((Date.now() - lastInteractionRef.current) / 1000);
+      const remaining = Math.max(0, 30 - elapsed);
+      setIdleSecondsRemaining(remaining);
+
+      if (remaining === 0) {
+        lastInteractionRef.current = Date.now();
+        setIdleSecondsRemaining(30);
+        handleTriggerIdleChallenge();
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isProcessing, isDebating, isIdleResolving, dots]);
+
+  // Execute Complete Opinion & Final Consensus Pipeline
+  const executeConsensusFlow = async (queryText: string, isFromIdle: boolean = false) => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    resetInactivityTimer();
+
+    const activeDots = dots.filter((d) => d.active);
+    const validDots = activeDots.length >= 2 ? activeDots : INITIAL_DOTS.slice(0, 3);
+
+    try {
+      // 1. Route to determine relevant topic & specialist Dots
+      addLog(
+        "router",
+        isFromIdle
+          ? `Sala autônoma (30s): Selecionando Dots para o desafio: "${queryText.slice(0, 45)}..."`
+          : `Multiplexer roteando e alocando Dots para: "${queryText}"`
+      );
+
+      const decision = await routeMultiplexer(queryText, validDots);
+      setLastRoutingDecision(decision);
+
+      const primaryDot =
+        validDots.find((d) => d.id === decision.selectedDotId) || validDots[0];
+      const secondaryDot =
+        validDots.find((d) => d.id === decision.secondaryDotId) ||
+        validDots.find((d) => d.id !== primaryDot.id) ||
+        validDots[1] ||
+        validDots[0];
+
+      const participating = [primaryDot, secondaryDot];
+
+      // 2. Set processingDotIds: triggers CSS pulse and glow effects on both dots!
+      setProcessingDotIds([primaryDot.id, secondaryDot.id]);
+      addLog(
+        "router",
+        `Dots [${primaryDot.name}] e [${secondaryDot.name}] processando dados e enviando opiniões ao Nexus...`
+      );
+
+      // 3. Each Dot sends their opinion to the Nexus
+      const collectedOpinions: { dotName: string; topic: string; text: string }[] = [];
+
+      for (const dot of participating) {
+        setActiveSpeakerDotId(dot.id);
+        const prompt = `Como ${dot.name} (Especialista em ${dot.topic}), elabore seu pensamento técnico detalhado e envie sua opinião para o Nexus a respeito de: "${queryText}". Resuma sua proposta em 2 a 3 frases objetivas e assertivas:`;
+
+        const chatRes = await chatWithDot(
+          prompt,
+          dot,
+          messages,
+          globalProactivity,
+          validDots
+        );
+
+        collectedOpinions.push({
+          dotName: dot.name,
+          topic: dot.topic,
+          text: chatRes.text,
+        });
+
+        const opMsgId = `msg-op-${dot.id}-${Date.now()}`;
+        const opMsg: ChatMessage = {
+          id: opMsgId,
+          timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+          senderType: "dot",
+          senderDotId: dot.id,
+          senderName: dot.name,
+          text: chatRes.text,
+          voiceName: dot.voice,
+          opinionTarget: "Nexus",
+        };
+        setMessages((prev) => [...prev, opMsg]);
+        setActiveSpeakerDotId(null);
+      }
+
+      // 4. Nexus Master processes the consensus
+      setProcessingDotIds(["router"]);
+      addLog("solution", "Nexus consolidando pensamentos de todos os Dots em um consenso definitivo resumido...");
+
+      const consensusResult = await formulateNexusConsensus(
+        queryText,
+        collectedOpinions,
+        participating
+      );
+
+      // 5. Present the final consensus in summary with title and few words
+      const consensusMsgId = `msg-consensus-${Date.now()}`;
+      const consensusMsg: ChatMessage = {
+        id: consensusMsgId,
+        timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+        senderType: "multiplexer",
+        senderName: "Multiplexer Neural Core",
+        text: `${consensusResult.title}: ${consensusResult.shortSummary}`,
+        isConsensus: true,
+        consensus: consensusResult,
+        voiceName: "Zephyr",
+      };
+
+      setMessages((prev) => [...prev, consensusMsg]);
+
+      // 6. Register on Humanity Solutions Board
+      const newSol: HumanitySolution = {
+        id: consensusResult.id,
+        title: consensusResult.title,
+        targetCrisis: consensusResult.targetCrisis || queryText,
+        status: "Consenso Alcançado",
+        feasibilityScore: consensusResult.feasibilityScore || 96,
+        summary: consensusResult.shortSummary,
+        technicalBreakdown: collectedOpinions.map((o) => `${o.dotName}: ${o.text}`),
+        timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+        authors: consensusResult.participatingDots,
+        upvotes: 1,
+      };
+      setSolutions((prev) => [newSol, ...prev]);
+
+      // 7. Voice output (summarized title and few words)
+      await playSpeech(
+        `Consenso alcançado: ${consensusResult.title}. ${consensusResult.shortSummary}`,
+        multiplexerAgent,
+        consensusMsgId
+      );
+    } catch (err: any) {
+      addLog("info", `Erro na formulação de consenso: ${err.message}`);
+    } finally {
+      setIsProcessing(false);
+      setProcessingDotIds([]);
+      setActiveSpeakerDotId(null);
+      resetInactivityTimer();
+    }
+  };
+
   // Handle user query submission
   const handleSendMessage = async (queryText: string) => {
     if (!queryText.trim() || isProcessing) return;
+    resetInactivityTimer();
 
-    setIsProcessing(true);
     const userMsgId = `msg-user-${Date.now()}`;
     const userMsg: ChatMessage = {
       id: userMsgId,
@@ -136,87 +402,34 @@ export default function App() {
     };
 
     setMessages((prev) => [...prev, userMsg]);
-    addLog("router", `Analisando intenção e roteamento para: "${queryText}"`);
+    await executeConsensusFlow(queryText, false);
+  };
+
+  // Handle Inactivity 30s Challenge Trigger
+  const handleTriggerIdleChallenge = async () => {
+    if (isProcessing || isDebating || isIdleResolving) return;
+    setIsIdleResolving(true);
+    resetInactivityTimer();
+
+    const randomChallenge =
+      IDLE_UNSOLVED_CHALLENGES[
+        Math.floor(Math.random() * IDLE_UNSOLVED_CHALLENGES.length)
+      ];
+
+    const idleNotice: ChatMessage = {
+      id: `msg-idle-${Date.now()}`,
+      timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+      senderType: "system",
+      senderName: "Sala Autônoma (30s)",
+      text: `⏱️ 30 segundos sem perguntas: Os Dots assumiram a liderança e estão resolvendo: "${randomChallenge}"`,
+    };
+    setMessages((prev) => [...prev, idleNotice]);
 
     try {
-      // Step 1: Multiplexer Route
-      const activeDots = dots.filter((d) => d.active);
-      const decision = await routeMultiplexer(queryText, activeDots);
-      setLastRoutingDecision(decision);
-
-      addLog(
-        "router",
-        `Roteado para ${decision.selectedDotId} (${Math.round(decision.confidence * 100)}% Match) - ${decision.reasoning}`
-      );
-
-      // Add routing announcement
-      const routerMsg: ChatMessage = {
-        id: `msg-route-${Date.now()}`,
-        timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
-        senderType: "router",
-        senderName: "Multiplexador Neural",
-        text: `Tópico [${decision.detectedTopic}] direcionado para ${
-          dots.find((d) => d.id === decision.selectedDotId)?.name || "Dot Especialista"
-        }`,
-        reasoning: decision.reasoning,
-      };
-      setMessages((prev) => [...prev, routerMsg]);
-
-      // Step 2: Dot Response
-      const targetDot = dots.find((d) => d.id === decision.selectedDotId) || activeDots[0];
-      if (targetDot) {
-        setActiveSpeakerDotId(targetDot.id);
-
-        const chatResult = await chatWithDot(
-          queryText,
-          targetDot,
-          messages,
-          globalProactivity,
-          activeDots
-        );
-
-        const dotMsgId = `msg-dot-${Date.now()}`;
-        const dotMsg: ChatMessage = {
-          id: dotMsgId,
-          timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
-          senderType: "dot",
-          senderDotId: targetDot.id,
-          senderName: targetDot.name,
-          text: chatResult.text,
-          voiceName: targetDot.voice,
-        };
-
-        setMessages((prev) => [...prev, dotMsg]);
-
-        // Voice speech
-        await playSpeech(chatResult.text, targetDot, dotMsgId);
-
-        // Step 3: Proactive Chime if available
-        if (chatResult.proactiveChime) {
-          const chimeDot = dots.find((d) => d.id === chatResult.proactiveChime.dotId);
-          if (chimeDot) {
-            addLog("debate", `Intervenção Proativa de ${chimeDot.name}`);
-            const chimeMsgId = `msg-chime-${Date.now()}`;
-            const chimeMsg: ChatMessage = {
-              id: chimeMsgId,
-              timestamp: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
-              senderType: "dot",
-              senderDotId: chimeDot.id,
-              senderName: chimeDot.name,
-              text: chatResult.proactiveChime.text,
-              isProactiveChime: true,
-              voiceName: chimeDot.voice,
-            };
-            setMessages((prev) => [...prev, chimeMsg]);
-            await playSpeech(chatResult.proactiveChime.text, chimeDot, chimeMsgId);
-          }
-        }
-      }
-    } catch (err: any) {
-      addLog("info", `Erro no processamento: ${err.message}`);
+      await executeConsensusFlow(randomChallenge, true);
     } finally {
-      setIsProcessing(false);
-      setActiveSpeakerDotId(null);
+      setIsIdleResolving(false);
+      resetInactivityTimer();
     }
   };
 
@@ -303,7 +516,6 @@ export default function App() {
           setMessages((prev) => [...prev, turnMsg]);
           await playSpeech(stepResult.text, speakerDot, turnMsgId);
 
-          // Every 3 turns, attempt automatic solution synthesis
           if (currentSpeakerIdx % 3 === 0) {
             handleSynthesizeNewSolution(chosenTheme);
           }
@@ -364,6 +576,10 @@ export default function App() {
 
   // Replay voice of any message
   const handlePlayMessageVoice = (msg: ChatMessage) => {
+    if (msg.senderType === "multiplexer") {
+      playSpeech(msg.text, multiplexerAgent, msg.id);
+      return;
+    }
     const dot = dots.find((d) => d.id === msg.senderDotId);
     if (dot) {
       playSpeech(msg.text, dot, msg.id);
@@ -410,7 +626,10 @@ export default function App() {
     addLog("info", `Dot "${newDot.name}" configurado e integrado ao multiplexador.`);
   };
 
-  const activeSpeakerName = dots.find((d) => d.id === activeSpeakerDotId)?.name || null;
+  const activeSpeakerName =
+    activeSpeakerDotId === "router"
+      ? "Multiplexer Neural Core"
+      : dots.find((d) => d.id === activeSpeakerDotId)?.name || null;
 
   return (
     <div className="h-screen w-screen flex flex-col bg-[#050814] text-slate-100 overflow-hidden font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
@@ -436,6 +655,9 @@ export default function App() {
           setIsCreateModalOpen(true);
         }}
         onSelectPresetTopic={(t) => handleSendMessage(t)}
+        idleSecondsRemaining={idleSecondsRemaining}
+        isIdleResolving={isIdleResolving}
+        onTriggerImmediateIdleSolve={handleTriggerIdleChallenge}
       />
 
       {/* 2. Main Workspace Layout */}
@@ -459,10 +681,11 @@ export default function App() {
         {/* Center Canvas + Feed + Conversation Bar */}
         <section className="flex-1 flex flex-col overflow-hidden relative min-w-0">
           {/* Top Half: Multiplexer Topology Canvas */}
-          <div className="h-64 md:h-72 shrink-0 border-b border-slate-800/80 relative">
+          <div className="h-60 md:h-64 shrink-0 border-b border-slate-800/80 relative">
             <MultiplexerTopologyCanvas
               dots={dots}
               activeSpeakerDotId={activeSpeakerDotId}
+              processingDotIds={processingDotIds}
               onSelectDot={(dot) => setSelectedDot(dot)}
               isRouting={isProcessing}
               activeTopic={lastRoutingDecision?.detectedTopic}
@@ -478,13 +701,21 @@ export default function App() {
             activeSpeakingMessageId={activeSpeakingMessageId}
           />
 
-          {/* Floating / Anchored Gemini Conversation Bar */}
+          {/* Floating Gemini.com Style Conversation Bar */}
           <div className="border-t border-slate-800/80 bg-gradient-to-t from-[#050814] via-[#050814]/95 to-transparent shrink-0">
             <GeminiConversationBar
               onSendMessage={handleSendMessage}
               isProcessing={isProcessing}
               activeSpeakerDotName={activeSpeakerName}
               detectedTopic={lastRoutingDecision?.detectedTopic}
+              isLiveMode={isLiveMode}
+              onToggleLiveMode={handleToggleLiveMode}
+              orchestrationMode={orchestrationMode}
+              onChangeOrchestrationMode={setOrchestrationMode}
+              modelMode={modelMode}
+              onChangeModelMode={setModelMode}
+              onSynthesizeSolution={() => handleSynthesizeNewSolution()}
+              onUserActivity={resetInactivityTimer}
             />
           </div>
 
@@ -519,3 +750,4 @@ export default function App() {
     </div>
   );
 }
+
