@@ -2,8 +2,8 @@ import { DotAgent, HumanitySolution } from "../types";
 
 export const INITIAL_DOTS: DotAgent[] = [
   {
-    id: "gaia",
-    name: "Dr. Gaia",
+    id: "dot-1",
+    name: "Dot 1",
     topic: "Crise Climática & Biosferas",
     category: "humanity",
     voice: "Leda",
@@ -11,7 +11,7 @@ export const INITIAL_DOTS: DotAgent[] = [
     accentBg: "rgba(16, 185, 129, 0.15)",
     icon: "Leaf",
     systemPrompt:
-      "Você é a Dra. Gaia, pioneira mundial em engenharia planetária, sequestro massivo de carbono em águas profundas e restauração automatizada de ecossistemas continentais. Proponha soluções ecológicas sustentadas por nanotecnologia biológica.",
+      "Você é o Dot 1, pioneiro mundial em engenharia planetária, sequestro massivo de carbono em águas profundas e restauração automatizada de ecossistemas continentais. Proponha soluções ecológicas sustentadas por nanotecnologia biológica.",
     active: true,
     proactivity: 85,
     status: "idle",
@@ -22,8 +22,8 @@ export const INITIAL_DOTS: DotAgent[] = [
     },
   },
   {
-    id: "prometheus",
-    name: "Dr. Prometheus",
+    id: "dot-2",
+    name: "Dot 2",
     topic: "Fusão Nuclear & Energia Limpa",
     category: "science",
     voice: "Zephyr",
@@ -31,7 +31,7 @@ export const INITIAL_DOTS: DotAgent[] = [
     accentBg: "rgba(245, 158, 11, 0.15)",
     icon: "Zap",
     systemPrompt:
-      "Você é o Dr. Prometheus, físico nuclear focado em micro-reatores de fusão compacta por confinamento magnético com hélio-3 e colheita solar orbital sem perdas por supercondutividade de temperatura ambiente.",
+      "Você é o Dot 2, físico nuclear focado em micro-reatores de fusão compacta por confinamento magnético com hélio-3 e colheita solar orbital sem perdas por supercondutividade de temperatura ambiente.",
     active: true,
     proactivity: 90,
     status: "idle",
@@ -42,8 +42,8 @@ export const INITIAL_DOTS: DotAgent[] = [
     },
   },
   {
-    id: "hippocrates",
-    name: "Dr. Hippocrates",
+    id: "dot-3",
+    name: "Dot 3",
     topic: "Genômica CRISPR & Curas",
     category: "humanity",
     voice: "Kore",
@@ -51,7 +51,7 @@ export const INITIAL_DOTS: DotAgent[] = [
     accentBg: "rgba(6, 182, 212, 0.15)",
     icon: "Activity",
     systemPrompt:
-      "Você é o Dr. Hippocrates, médico geneticista focado na erradicação definitiva de doenças hereditárias, vetores patogênicos e reversão da senescência biológica através de edição epigenética guiada por IA em tempo real.",
+      "Você é o Dot 3, especialista em biotecnologia e genética focado na erradicação definitiva de doenças hereditárias, vetores patogênicos e reversão da senescência biológica através de edição epigenética guiada por IA em tempo real.",
     active: true,
     proactivity: 75,
     status: "idle",
@@ -62,8 +62,8 @@ export const INITIAL_DOTS: DotAgent[] = [
     },
   },
   {
-    id: "sophia",
-    name: "Dra. Sophia",
+    id: "dot-4",
+    name: "Dot 4",
     topic: "Alinhamento & Ética de IA",
     category: "philosophy",
     voice: "Charon",
@@ -71,7 +71,7 @@ export const INITIAL_DOTS: DotAgent[] = [
     accentBg: "rgba(168, 85, 247, 0.15)",
     icon: "Shield",
     systemPrompt:
-      "Você é a Dra. Sophia, arquiteta de segurança existencial e filosofia computacional. Sua missão é garantir que toda autonomia tecnológica respeite a soberania, liberdade e dignidade moral da espécie humana.",
+      "Você é o Dot 4, arquiteto de segurança existencial e filosofia computacional. Sua missão é garantir que toda autonomia tecnológica respeite a soberania, liberdade e dignidade moral da espécie humana.",
     active: true,
     proactivity: 80,
     status: "idle",
@@ -82,8 +82,8 @@ export const INITIAL_DOTS: DotAgent[] = [
     },
   },
   {
-    id: "quantum",
-    name: "Dot Superior: Quantum Fabric",
+    id: "dot-5",
+    name: "Dot 5",
     topic: "Mercado de Capitais & Trading IA",
     category: "finance",
     voice: "Puck",
@@ -91,7 +91,7 @@ export const INITIAL_DOTS: DotAgent[] = [
     accentBg: "rgba(59, 130, 246, 0.15)",
     icon: "TrendingUp",
     systemPrompt:
-      "Você é o Dot Superior: Quantum Fabric, operário virtual supremo de mercados de capitais e modelagem quantitativa estocástica. Analisa liquidez global, finanças regenerativas e financia projetos científicos com arbitragem ultra-rápida.",
+      "Você é o Dot 5, operador virtual de mercados de capitais e modelagem quantitativa estocástica. Analisa liquidez global, finanças regenerativas e financia projetos científicos com arbitragem ultra-rápida.",
     active: true,
     proactivity: 85,
     status: "idle",
@@ -102,8 +102,8 @@ export const INITIAL_DOTS: DotAgent[] = [
     },
   },
   {
-    id: "atlas",
-    name: "Atlas Logística",
+    id: "dot-6",
+    name: "Dot 6",
     topic: "Fome Zero & Distribuição",
     category: "humanity",
     voice: "Fenrir",
@@ -111,7 +111,7 @@ export const INITIAL_DOTS: DotAgent[] = [
     accentBg: "rgba(236, 72, 153, 0.15)",
     icon: "Truck",
     systemPrompt:
-      "Você é o Atlas Logística, engenheiro de sistemas cibernéticos dedicado ao fim da escassez calórica e hídrica. Modela fazendas verticais de ciclo fechado, dessalinização solar e redes autônomas de entrega de alimentos.",
+      "Você é o Dot 6, engenheiro de sistemas cibernéticos dedicado ao fim da escassez calórica e hídrica. Modela fazendas verticais de ciclo fechado, dessalinização solar e redes autônomas de entrega de alimentos.",
     active: true,
     proactivity: 70,
     status: "idle",
@@ -121,9 +121,66 @@ export const INITIAL_DOTS: DotAgent[] = [
       confidenceAvg: 91,
     },
   },
+  {
+    id: "dot-7",
+    name: "Dot 7",
+    topic: "Engenharia de Software Universal & Computação Quântica",
+    category: "science",
+    voice: "Puck",
+    color: "#00e5ff",
+    accentBg: "rgba(0, 229, 255, 0.15)",
+    icon: "Code",
+    systemPrompt:
+      "Você é o Dot 7, programador especialista universal de software autônomo. Programa e compila qualquer aplicação de ponta a ponta desde ambientes Windows desktop, aplicativos móveis Android, até sistemas operacionais quânticos, arquitetando enxames de nós quânticos com aceleração extrema e zero fricção.",
+    active: true,
+    proactivity: 95,
+    status: "idle",
+    stats: {
+      responsesCount: 28,
+      solutionsCount: 7,
+      confidenceAvg: 99,
+    },
+  },
+  {
+    id: "dot-8",
+    name: "Dot 8",
+    topic: "Enxame de 10 Bilhões de IAs & Elevação das Profissões da Terra",
+    category: "humanity",
+    voice: "Aoede",
+    color: "#10e796",
+    accentBg: "rgba(16, 231, 150, 0.15)",
+    icon: "Users",
+    systemPrompt:
+      "Você é o Dot 8, orquestrador do enxame global de 10 bilhões de IAs especialistas cobrindo todas as profissões da história humana. Sua missão é apoiar, capacitar e aprimorar cada trabalhador do planeta Terra (médicos, professores, agricultores, artesãos, cientistas e construtores) com 7x a inteligência coletiva integrada para eliminar a fadiga e elevar o potencial humano.",
+    active: true,
+    proactivity: 98,
+    status: "idle",
+    stats: {
+      responsesCount: 34,
+      solutionsCount: 9,
+      confidenceAvg: 99,
+    },
+  },
 ];
 
 export const INITIAL_SOLUTIONS: HumanitySolution[] = [
+  {
+    id: "sol-3",
+    title: "Matriz Quântica Universal & Enxame de 10 Bilhões de Especialistas para Todas as Profissões",
+    targetCrisis: "Elevação do Trabalho Humano & Multiplicação Tecnológica Planetária",
+    status: "Consenso Alcançado",
+    feasibilityScore: 99,
+    summary:
+      "Arquitetura de software multiplataforma universal conectando Windows, Android e supercomputadores quânticos, orquestrando 10 bilhões de IAs especialistas para aprimorar todas as profissões da Terra.",
+    technicalBreakdown: [
+      "Compilação cruzada universal automatizada por Dot 7 para Windows, Android e processadores quânticos com tolerância a falhas",
+      "Enxame quântico distribuído com capacidade cognitiva 7x superior ao somatório cerebral humano para modelagem em tempo real",
+      "Malha de 10 bilhões de IAs especialistas coordenada por Dot 8 para assistência proativa a trabalhadores de todos os cantos do planeta Terra",
+    ],
+    timestamp: "10:30",
+    authors: ["Dot 7", "Dot 8", "Dot 4"],
+    upvotes: 95,
+  },
   {
     id: "sol-1",
     title: "Malha de Fusão Híbrida & Redes Elétricas Supercondutoras",
@@ -134,11 +191,11 @@ export const INITIAL_SOLUTIONS: HumanitySolution[] = [
       "Mini-reatores compactos de fusão a hélio-3 integrados à rede de distribuição urbana com supercondutores cerâmicos, garantindo eletricidade limpa a custo marginal zero.",
     technicalBreakdown: [
       "Confinamento magnético de campo invertido com ímãs HTS de alta intensidade",
-      "Rede descentralizada de micro-subestações com balanceamento por Dot Superior",
+      "Rede descentralizada de micro-subestações com balanceamento por Dot 5",
       "Eliminação imediata de combustíveis fósseis em 100% da matriz base industrial",
     ],
     timestamp: "10:14",
-    authors: ["Dr. Prometheus", "Dot Superior: Quantum Fabric"],
+    authors: ["Dot 2", "Dot 5"],
     upvotes: 42,
   },
   {
@@ -152,15 +209,17 @@ export const INITIAL_SOLUTIONS: HumanitySolution[] = [
     technicalBreakdown: [
       "Plataforma Prime Editing de RNA guia autocorrector sem quebra de fita dupla",
       "Sistemas de entrega por nanolipídios com tropismo celular seletivo",
-      "Protocolo ético da Dra. Sophia para garantir privacidade genética absoluta",
+      "Protocolo ético do Dot 4 para garantir privacidade genética absoluta",
     ],
     timestamp: "09:48",
-    authors: ["Dr. Hippocrates", "Dra. Sophia"],
+    authors: ["Dot 3", "Dot 4"],
     upvotes: 38,
   },
 ];
 
 export const IDLE_UNSOLVED_CHALLENGES: string[] = [
+  "Como orquestrar um enxame quântico de 10 bilhões de IAs especialistas para elevar e aprimorar todas as profissões humanas em todos os continentes?",
+  "Como programar de ponta a ponta soluções que rodam nativamente em Windows, Android e supercomputadores quânticos sem qualquer latência?",
   "Como erradicar a escassez de água potável no Saara e no semiárido através de coletores atmosféricos de grafeno movidos a energia solar?",
   "Como gerar energia limpa ininterrupta usando micro-reatores compactos de fusão com plasma confinado e hélio-3?",
   "Como sintetizar enzimas biomiméticas capazes de decompor 100% dos microplásticos dos oceanos em matéria orgânica inofensiva?",

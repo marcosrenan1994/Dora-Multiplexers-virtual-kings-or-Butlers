@@ -1,6 +1,34 @@
 export type VoiceName = 'Zephyr' | 'Puck' | 'Charon' | 'Kore' | 'Fenrir' | 'Aoede' | 'Leda';
 
+export type AppViewMode = 'interactive' | 'debate' | 'video_panel';
 export type OrchestrationMode = 'multiplexer_integrated' | 'direct_specialist';
+
+export interface VideoFrame {
+  id: string;
+  frameIndex: number;
+  url: string;
+  fallbackUrl: string;
+  caption: string;
+  stageName: string;
+  timestampOffset: number;
+}
+
+export interface VideoStoryboardScene {
+  id: string;
+  title: string;
+  sourceText: string;
+  authorName: string;
+  authorDotId?: string;
+  authorVoice?: VoiceName;
+  imageUrl: string;
+  fallbackImageUrl?: string;
+  frames: VideoFrame[];
+  imagePrompt: string;
+  category: 'consensus' | 'opinion' | 'debate' | 'solution' | 'user' | 'system';
+  timestamp: string;
+  radioStationFreq: string; // e.g. "104.5 MHz"
+  radioStationLabel: string; // e.g. "Estação Ômega - Rádio Notícias"
+}
 export type ModelMode = 'gemini-3.8-live' | 'gemini-3.1-pro' | 'gemini-flash-lite';
 
 export interface DotAgent {

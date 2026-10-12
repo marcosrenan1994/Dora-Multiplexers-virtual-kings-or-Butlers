@@ -11,6 +11,7 @@ import {
   Cpu,
   Layers,
   ArrowRight,
+  Film,
 } from "lucide-react";
 
 interface HumanitySolutionsBoardProps {
@@ -18,6 +19,7 @@ interface HumanitySolutionsBoardProps {
   onSynthesizeNewSolution: () => void;
   isSynthesizing: boolean;
   activeDots: DotAgent[];
+  onOpenVideoForSolution?: (sol: HumanitySolution) => void;
 }
 
 export const HumanitySolutionsBoard: React.FC<HumanitySolutionsBoardProps> = ({
@@ -25,6 +27,7 @@ export const HumanitySolutionsBoard: React.FC<HumanitySolutionsBoardProps> = ({
   onSynthesizeNewSolution,
   isSynthesizing,
   activeDots,
+  onOpenVideoForSolution,
 }) => {
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
 
@@ -157,23 +160,36 @@ ${solution.technicalBreakdown.map((p, i) => `${i + 1}. ${p}`).join("\n")}
                 </div>
               </div>
 
-              <button
-                onClick={() => handleCopy(sol)}
-                className="hover:text-amber-300 text-slate-500 flex items-center gap-1 transition-colors"
-                title="Copiar Blueprint completo"
-              >
-                {copiedId === sol.id ? (
-                  <>
-                    <Check className="w-3 h-3 text-emerald-400" />
-                    <span className="text-emerald-400">Copiado</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3 h-3" />
-                    <span>Copiar</span>
-                  </>
+              <div className="flex items-center gap-2">
+                {onOpenVideoForSolution && (
+                  <button
+                    onClick={() => onOpenVideoForSolution(sol)}
+                    className="hover:text-amber-300 text-amber-400/90 flex items-center gap-1 transition-colors px-1.5 py-0.5 rounded bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30"
+                    title="Ver resumo em vídeo com imagem e voz Autobot"
+                  >
+                    <Film className="w-3 h-3 text-amber-400" />
+                    <span>Vídeo</span>
+                  </button>
                 )}
-              </button>
+
+                <button
+                  onClick={() => handleCopy(sol)}
+                  className="hover:text-amber-300 text-slate-500 flex items-center gap-1 transition-colors"
+                  title="Copiar Blueprint completo"
+                >
+                  {copiedId === sol.id ? (
+                    <>
+                      <Check className="w-3 h-3 text-emerald-400" />
+                      <span className="text-emerald-400">Copiado</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3 h-3" />
+                      <span>Copiar</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         ))}

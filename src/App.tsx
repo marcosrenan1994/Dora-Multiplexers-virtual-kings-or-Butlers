@@ -7,6 +7,7 @@ import {
   RoutingDecision,
   OrchestrationMode,
   ModelMode,
+  AppViewMode,
 } from "./types";
 import { INITIAL_DOTS, INITIAL_SOLUTIONS, IDLE_UNSOLVED_CHALLENGES } from "./data/presetDots";
 import { HeaderNavbar } from "./components/HeaderNavbar";
@@ -17,6 +18,7 @@ import { GeminiConversationBar } from "./components/GeminiConversationBar";
 import { HumanitySolutionsBoard } from "./components/HumanitySolutionsBoard";
 import { TelemetryDiagnostics } from "./components/TelemetryDiagnostics";
 import { CreateDotModal } from "./components/CreateDotModal";
+import { DotNexusVideoPanel } from "./components/DotNexusVideoPanel";
 import {
   routeMultiplexer,
   chatWithDot,
@@ -51,11 +53,12 @@ export default function App() {
       id: "log-2",
       timestamp: new Date().toLocaleTimeString("pt-BR"),
       level: "router",
-      message: "6 nós de IAs autônomas proativas carregados na topologia.",
+      message: "8 nós de IAs autônomas proativas carregados na topologia (Dot 1 a Dot 8).",
     },
   ]);
 
-  const [currentMode, setCurrentMode] = useState<"interactive" | "debate">("interactive");
+  const [currentMode, setCurrentMode] = useState<AppViewMode>("video_panel");
+  const [selectedVideoMessage, setSelectedVideoMessage] = useState<ChatMessage | null>(null);
   const [isDebating, setIsDebating] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [isSynthesizing, setIsSynthesizing] = useState<boolean>(false);
@@ -633,109 +636,166 @@ export default function App() {
 
   return (
     <div className="h-screen w-screen flex flex-col bg-[#050814] text-slate-100 overflow-hidden font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
-      {/* 1. Header Navbar */}
-      <HeaderNavbar
-        currentMode={currentMode}
-        onModeChange={(mode) => {
-          setCurrentMode(mode);
-          if (mode === "debate" && !isDebating) {
-            handleToggleDebate();
-          } else if (mode === "interactive" && isDebating) {
-            handleToggleDebate();
-          }
-        }}
-        isDebating={isDebating}
-        onToggleDebate={handleToggleDebate}
-        isMuted={isMuted}
-        onToggleMute={handleToggleMute}
-        activeDotsCount={dots.filter((d) => d.active).length}
-        totalSolutionsCount={solutions.length}
-        onOpenNewDotModal={() => {
-          setDotToEdit(null);
-          setIsCreateModalOpen(true);
-        }}
-        onSelectPresetTopic={(t) => handleSendMessage(t)}
-        idleSecondsRemaining={idleSecondsRemaining}
-        isIdleResolving={isIdleResolving}
-        onTriggerImmediateIdleSolve={handleTriggerIdleChallenge}
-      />
-
-      {/* 2. Main Workspace Layout */}
-      <main className="flex-1 flex overflow-hidden relative">
-        {/* Left Sidebar: Autonomous Dots Manager */}
-        <DotsManagerSidebar
-          dots={dots}
-          onToggleDotActive={handleToggleDotActive}
-          onEditDot={handleEditDot}
-          onDeleteDot={handleDeleteDot}
-          onOpenCreateModal={() => {
-            setDotToEdit(null);
-            setIsCreateModalOpen(true);
-          }}
-          globalProactivity={globalProactivity}
-          onChangeGlobalProactivity={setGlobalProactivity}
-          selectedDotId={selectedDot?.id}
-          onSelectDot={(dot) => setSelectedDot(dot)}
-        />
-
-        {/* Center Canvas + Feed + Conversation Bar */}
-        <section className="flex-1 flex flex-col overflow-hidden relative min-w-0">
-          {/* Top Half: Multiplexer Topology Canvas */}
-          <div className="h-60 md:h-64 shrink-0 border-b border-slate-800/80 relative">
-            <MultiplexerTopologyCanvas
-              dots={dots}
-              activeSpeakerDotId={activeSpeakerDotId}
-              processingDotIds={processingDotIds}
-              onSelectDot={(dot) => setSelectedDot(dot)}
-              isRouting={isProcessing}
-              activeTopic={lastRoutingDecision?.detectedTopic}
-            />
-          </div>
-
-          {/* Middle: Transcript & Dialogue Feed */}
-          <DebateTranscriptFeed
+      {currentMode === "video_panel" ? (
+        /* PURE VIDEO PANEL VIEW: All menus hidden and given to Nexus */
+        <main className="flex-1 flex overflow-hidden relative w-full h-full">
+          <DotNexusVideoPanel
             messages={messages}
-            onClearMessages={() => setMessages([])}
-            onPlayMessageVoice={handlePlayMessageVoice}
+            solutions={solutions}
             dots={dots}
-            activeSpeakingMessageId={activeSpeakingMessageId}
+            onToggleDotActive={handleToggleDotActive}
+            onEditDot={handleEditDot}
+            onOpenCreateModal={() => {
+              setDotToEdit(null);
+              setIsCreateModalOpen(true);
+            }}
+            onDeleteDot={handleDeleteDot}
+            globalProactivity={globalProactivity}
+            onChangeGlobalProactivity={setGlobalProactivity}
+            onSendMessage={handleSendMessage}
+            isProcessing={isProcessing}
+            isDebating={isDebating}
+            onToggleDebate={handleToggleDebate}
+            onSynthesizeNewSolution={handleSynthesizeNewSolution}
+            isSynthesizing={isSynthesizing}
+            onSelectPresetTopic={(t) => handleSendMessage(t)}
+            selectedInitialMessage={selectedVideoMessage}
+            onClearInitialMessage={() => setSelectedVideoMessage(null)}
+            onToggleClassicMode={() => setCurrentMode("interactive")}
+          />
+        </main>
+      ) : (
+        /* CLASSIC WORKSPACE VIEW */
+        <>
+          {/* 1. Header Navbar */}
+          <HeaderNavbar
+            currentMode={currentMode}
+            onModeChange={(mode) => {
+              setCurrentMode(mode);
+              if (mode === "debate" && !isDebating) {
+                handleToggleDebate();
+              } else if (mode === "interactive" && isDebating) {
+                handleToggleDebate();
+              }
+            }}
+            isDebating={isDebating}
+            onToggleDebate={handleToggleDebate}
+            isMuted={isMuted}
+            onToggleMute={handleToggleMute}
+            activeDotsCount={dots.filter((d) => d.active).length}
+            totalSolutionsCount={solutions.length}
+            onOpenNewDotModal={() => {
+              setDotToEdit(null);
+              setIsCreateModalOpen(true);
+            }}
+            onSelectPresetTopic={(t) => handleSendMessage(t)}
+            idleSecondsRemaining={idleSecondsRemaining}
+            isIdleResolving={isIdleResolving}
+            onTriggerImmediateIdleSolve={handleTriggerIdleChallenge}
           />
 
-          {/* Floating Gemini.com Style Conversation Bar */}
-          <div className="border-t border-slate-800/80 bg-gradient-to-t from-[#050814] via-[#050814]/95 to-transparent shrink-0">
-            <GeminiConversationBar
-              onSendMessage={handleSendMessage}
-              isProcessing={isProcessing}
-              activeSpeakerDotName={activeSpeakerName}
-              detectedTopic={lastRoutingDecision?.detectedTopic}
-              isLiveMode={isLiveMode}
-              onToggleLiveMode={handleToggleLiveMode}
-              orchestrationMode={orchestrationMode}
-              onChangeOrchestrationMode={setOrchestrationMode}
-              modelMode={modelMode}
-              onChangeModelMode={setModelMode}
-              onSynthesizeSolution={() => handleSynthesizeNewSolution()}
-              onUserActivity={resetInactivityTimer}
+          {/* 2. Main Workspace Layout */}
+          <main className="flex-1 flex overflow-hidden relative">
+            {/* Left Sidebar: Autonomous Dots Manager */}
+            <DotsManagerSidebar
+              dots={dots}
+              onToggleDotActive={handleToggleDotActive}
+              onEditDot={handleEditDot}
+              onDeleteDot={handleDeleteDot}
+              onOpenCreateModal={() => {
+                setDotToEdit(null);
+                setIsCreateModalOpen(true);
+              }}
+              globalProactivity={globalProactivity}
+              onChangeGlobalProactivity={setGlobalProactivity}
+              selectedDotId={selectedDot?.id}
+              onSelectDot={(dot) => setSelectedDot(dot)}
             />
-          </div>
 
-          {/* Bottom Telemetry Diagnostics */}
-          <TelemetryDiagnostics
-            logs={logs}
-            onClearLogs={() => setLogs([])}
-            lastRoutingDecision={lastRoutingDecision}
-            activeSpeakerName={activeSpeakerName}
-          />
-        </section>
+            <section className="flex-1 flex flex-col overflow-hidden relative min-w-0">
+              {/* Top Half: Multiplexer Topology Canvas */}
+              <div className="h-60 md:h-64 shrink-0 border-b border-slate-800/80 relative">
+                <MultiplexerTopologyCanvas
+                  dots={dots}
+                  activeSpeakerDotId={activeSpeakerDotId}
+                  processingDotIds={processingDotIds}
+                  onSelectDot={(dot) => setSelectedDot(dot)}
+                  isRouting={isProcessing}
+                  activeTopic={lastRoutingDecision?.detectedTopic}
+                />
+              </div>
 
-        {/* Right Sidebar: Humanity Solutions Board */}
-        <HumanitySolutionsBoard
-          solutions={solutions}
-          onSynthesizeNewSolution={() => handleSynthesizeNewSolution()}
-          isSynthesizing={isSynthesizing}
-          activeDots={dots.filter((d) => d.active)}
-        />
-      </main>
+              {/* Middle: Transcript & Dialogue Feed */}
+              <DebateTranscriptFeed
+                messages={messages}
+                onClearMessages={() => setMessages([])}
+                onPlayMessageVoice={handlePlayMessageVoice}
+                dots={dots}
+                activeSpeakingMessageId={activeSpeakingMessageId}
+                onOpenVideoPanelForMessage={(msg) => {
+                  setSelectedVideoMessage(msg);
+                  setCurrentMode("video_panel");
+                }}
+              />
+
+              {/* Floating Gemini.com Style Conversation Bar */}
+              <div className="border-t border-slate-800/80 bg-gradient-to-t from-[#050814] via-[#050814]/95 to-transparent shrink-0">
+                <GeminiConversationBar
+                  onSendMessage={handleSendMessage}
+                  isProcessing={isProcessing}
+                  activeSpeakerDotName={activeSpeakerName}
+                  detectedTopic={lastRoutingDecision?.detectedTopic}
+                  isLiveMode={isLiveMode}
+                  onToggleLiveMode={handleToggleLiveMode}
+                  orchestrationMode={orchestrationMode}
+                  onChangeOrchestrationMode={setOrchestrationMode}
+                  modelMode={modelMode}
+                  onChangeModelMode={setModelMode}
+                  onSynthesizeSolution={() => handleSynthesizeNewSolution()}
+                  onUserActivity={resetInactivityTimer}
+                />
+              </div>
+
+              {/* Bottom Telemetry Diagnostics */}
+              <TelemetryDiagnostics
+                logs={logs}
+                onClearLogs={() => setLogs([])}
+                lastRoutingDecision={lastRoutingDecision}
+                activeSpeakerName={activeSpeakerName}
+              />
+            </section>
+
+            {/* Right Sidebar: Humanity Solutions Board */}
+            <HumanitySolutionsBoard
+              solutions={solutions}
+              onSynthesizeNewSolution={() => handleSynthesizeNewSolution()}
+              isSynthesizing={isSynthesizing}
+              activeDots={dots.filter((d) => d.active)}
+              onOpenVideoForSolution={(sol) => {
+                const solMsg: ChatMessage = {
+                  id: sol.id,
+                  timestamp: sol.timestamp,
+                  senderType: "multiplexer",
+                  senderName: sol.authors.join(" & "),
+                  text: `${sol.title}: ${sol.summary}. Pilares: ${sol.technicalBreakdown.join(". ")}`,
+                  isConsensus: true,
+                  consensus: {
+                    id: sol.id,
+                    title: sol.title,
+                    shortSummary: sol.summary,
+                    targetCrisis: sol.targetCrisis,
+                    participatingDots: sol.authors,
+                    timestamp: sol.timestamp,
+                    feasibilityScore: sol.feasibilityScore,
+                  },
+                };
+                setSelectedVideoMessage(solMsg);
+                setCurrentMode("video_panel");
+              }}
+            />
+          </main>
+        </>
+      )}
 
       {/* 3. Create or Edit Dot Modal */}
       <CreateDotModal

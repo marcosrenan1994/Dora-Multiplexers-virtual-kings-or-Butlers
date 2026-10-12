@@ -14,6 +14,8 @@ import {
   Activity,
   Shield,
   Truck,
+  Code,
+  Users,
 } from "lucide-react";
 
 interface DotsManagerSidebarProps {
@@ -53,6 +55,10 @@ export const DotsManagerSidebar: React.FC<DotsManagerSidebarProps> = ({
         return <TrendingUp className="w-4 h-4" />;
       case "Truck":
         return <Truck className="w-4 h-4" />;
+      case "Code":
+        return <Code className="w-4 h-4" />;
+      case "Users":
+        return <Users className="w-4 h-4" />;
       default:
         return <Bot className="w-4 h-4" />;
     }

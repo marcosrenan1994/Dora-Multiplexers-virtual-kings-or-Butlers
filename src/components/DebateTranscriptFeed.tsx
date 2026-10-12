@@ -10,6 +10,7 @@ import {
   Radio,
   CheckCircle2,
   MessageSquare,
+  Film,
 } from "lucide-react";
 
 interface DebateTranscriptFeedProps {
@@ -18,6 +19,7 @@ interface DebateTranscriptFeedProps {
   onPlayMessageVoice: (message: ChatMessage) => void;
   dots: DotAgent[];
   activeSpeakingMessageId: string | null;
+  onOpenVideoPanelForMessage?: (message: ChatMessage) => void;
 }
 
 export const DebateTranscriptFeed: React.FC<DebateTranscriptFeedProps> = ({
@@ -26,6 +28,7 @@ export const DebateTranscriptFeed: React.FC<DebateTranscriptFeedProps> = ({
   onPlayMessageVoice,
   dots,
   activeSpeakingMessageId,
+  onOpenVideoPanelForMessage,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -149,17 +152,30 @@ export const DebateTranscriptFeed: React.FC<DebateTranscriptFeedProps> = ({
                       </span>
                     </div>
 
-                    <button
-                      onClick={() => onPlayMessageVoice(msg)}
-                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-mono transition-all ${
-                        isCurrentlySpeaking
-                          ? "bg-amber-500/30 text-amber-200 border border-amber-500/40 animate-pulse font-bold"
-                          : "bg-slate-900 hover:bg-slate-800 text-amber-300 border border-slate-700"
-                      }`}
-                    >
-                      <Volume2 className="w-3.5 h-3.5" />
-                      <span>{isCurrentlySpeaking ? "Ouvindo Consenso..." : "Ouvir Resumo do Consenso"}</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => onPlayMessageVoice(msg)}
+                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-mono transition-all ${
+                          isCurrentlySpeaking
+                            ? "bg-amber-500/30 text-amber-200 border border-amber-500/40 animate-pulse font-bold"
+                            : "bg-slate-900 hover:bg-slate-800 text-amber-300 border border-slate-700"
+                        }`}
+                      >
+                        <Volume2 className="w-3.5 h-3.5" />
+                        <span>{isCurrentlySpeaking ? "Ouvindo Consenso..." : "Ouvir Resumo"}</span>
+                      </button>
+
+                      {onOpenVideoPanelForMessage && (
+                        <button
+                          onClick={() => onOpenVideoPanelForMessage(msg)}
+                          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-mono text-amber-300 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 shadow-sm transition"
+                          title="Ver montagem em vídeo com imagem gerada e rádio Autobot"
+                        >
+                          <Film className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                          <span>Vídeo Autobot</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -290,19 +306,32 @@ export const DebateTranscriptFeed: React.FC<DebateTranscriptFeedProps> = ({
                     {/* Audio Voice Replay Button */}
                     {!isUser && (
                       <div className="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
-                        <button
-                          onClick={() => onPlayMessageVoice(msg)}
-                          className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md font-mono transition-all ${
-                            isCurrentlySpeaking
-                              ? "bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/30 animate-pulse"
-                              : "hover:bg-slate-800 hover:text-slate-200 text-slate-400"
-                          }`}
-                        >
-                          <Volume2 className="w-3.5 h-3.5" />
-                          <span>
-                            {isCurrentlySpeaking ? "Reproduzindo Voz..." : `Ouvir (${msg.voiceName || dot?.voice || "Zephyr"})`}
-                          </span>
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => onPlayMessageVoice(msg)}
+                            className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md font-mono transition-all ${
+                              isCurrentlySpeaking
+                                ? "bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/30 animate-pulse"
+                                : "hover:bg-slate-800 hover:text-slate-200 text-slate-400"
+                            }`}
+                          >
+                            <Volume2 className="w-3.5 h-3.5" />
+                            <span>
+                              {isCurrentlySpeaking ? "Reproduzindo..." : `Ouvir (${msg.voiceName || dot?.voice || "Zephyr"})`}
+                            </span>
+                          </button>
+
+                          {onOpenVideoPanelForMessage && (
+                            <button
+                              onClick={() => onOpenVideoPanelForMessage(msg)}
+                              className="flex items-center gap-1 px-1.5 py-0.5 rounded-md font-mono text-[10px] text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 transition"
+                              title="Ver montagem em vídeo desta opinião"
+                            >
+                              <Film className="w-3 h-3 text-amber-400" />
+                              <span>Vídeo</span>
+                            </button>
+                          )}
+                        </div>
 
                         {dot && (
                           <span className="text-[10px] text-slate-500 font-mono">

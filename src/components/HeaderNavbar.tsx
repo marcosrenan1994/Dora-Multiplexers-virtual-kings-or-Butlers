@@ -9,11 +9,13 @@ import {
   Sparkles,
   Bot,
   Layers,
+  Film,
 } from "lucide-react";
+import { AppViewMode } from "../types";
 
 interface HeaderNavbarProps {
-  currentMode: "interactive" | "debate";
-  onModeChange: (mode: "interactive" | "debate") => void;
+  currentMode: AppViewMode;
+  onModeChange: (mode: AppViewMode) => void;
   isDebating: boolean;
   onToggleDebate: () => void;
   isMuted: boolean;
@@ -95,6 +97,21 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
             <Sparkles className="w-3.5 h-3.5 text-amber-300" />
             <span className="hidden md:inline">Mesa-Redonda</span>
             <span className="md:hidden">Debate</span>
+          </button>
+          <button
+            onClick={() => onModeChange("video_panel")}
+            className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+              currentMode === "video_panel"
+                ? "bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-bold shadow-md shadow-amber-500/30 ring-1 ring-amber-300"
+                : "text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
+            }`}
+            title="Abrir o novo Painel de Vídeo & Colagem Autobot do Dot Nexus"
+          >
+            <Film className="w-3.5 h-3.5 animate-pulse" />
+            <span className="hidden md:inline">Painel de Vídeo</span>
+            <span className="text-[10px] bg-amber-400/20 text-amber-300 font-mono px-1 rounded border border-amber-400/40 font-bold">
+              AUTOBOT
+            </span>
           </button>
         </div>
 
